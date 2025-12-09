@@ -34,7 +34,13 @@ pub fn capture(duration_secs: u32, _sample_rate: u32) -> Result<Vec<f32>> {
         .context("Failed to connect to PipeWire")?;
 
     // Shared state for audio capture
-    let audio_buffer: Rc<RefCell<Vec<f32>>> = Rc::new(RefCell::new(Vec::new()));
+    // Pre-allocate buffer based on expected duration (16kHz mono = 16000 samples/sec)
+    let expected_samples = if duration_secs > 0 {
+        16000 * duration_secs as usize
+    } else {
+        16000 * 30 // Default 30 seconds for unlimited mode
+    };
+    let audio_buffer: Rc<RefCell<Vec<f32>>> = Rc::new(RefCell::new(Vec::with_capacity(expected_samples)));
     let start_time: Rc<RefCell<Option<Instant>>> = Rc::new(RefCell::new(None));
 
     let audio_buffer_clone = audio_buffer.clone();
@@ -214,16 +220,9 @@ pub fn capture(duration_secs: u32, _sample_rate: u32) -> Result<Vec<f32>> {
 
     // Resample to 16kHz for Whisper
     let target_rate = 16000u32;
-    let samples = if detected_rate > target_rate + 1000 {
-        // Need to downsample
-        let ratio = detected_rate as f32 / target_rate as f32;
-        info!("Resampling from ~{}Hz to {}Hz (ratio: {:.2})", detected_rate, target_rate, ratio);
-        resample(&raw_samples, ratio)
-    } else if detected_rate < target_rate - 1000 {
-        // Need to upsample (unlikely but handle it)
-        let ratio = detected_rate as f32 / target_rate as f32;
-        info!("Resampling from ~{}Hz to {}Hz (ratio: {:.2})", detected_rate, target_rate, ratio);
-        resample(&raw_samples, ratio)
+    let samples = if detected_rate > target_rate + 1000 || detected_rate < target_rate - 1000 {
+        info!("Resampling from ~{}Hz to {}Hz", detected_rate, target_rate);
+        resample(&raw_samples, detected_rate, target_rate)
     } else {
         // Close enough to 16kHz
         raw_samples
@@ -235,8 +234,257 @@ pub fn capture(duration_secs: u32, _sample_rate: u32) -> Result<Vec<f32>> {
     Ok(samples)
 }
 
-/// Simple linear resampling
-fn resample(samples: &[f32], ratio: f32) -> Vec<f32> {
+/// Capture audio in toggle mode - stops when signal received or timeout
+pub fn capture_toggle(max_duration_secs: u32, _sample_rate: u32) -> Result<Vec<f32>> {
+    use crate::state::toggle::should_stop;
+
+    info!("Starting toggle mode capture (max {}s)", max_duration_secs);
+
+    pw::init();
+
+    let mainloop = pw::main_loop::MainLoopRc::new(None).context("Failed to create PipeWire main loop")?;
+    let context = pw::context::ContextRc::new(&mainloop, None).context("Failed to create PipeWire context")?;
+    let core = context
+        .connect_rc(None)
+        .context("Failed to connect to PipeWire")?;
+
+    // Pre-allocate for max duration
+    let expected_samples = 16000 * max_duration_secs as usize;
+    let audio_buffer: Rc<RefCell<Vec<f32>>> = Rc::new(RefCell::new(Vec::with_capacity(expected_samples)));
+    let start_time: Rc<RefCell<Option<Instant>>> = Rc::new(RefCell::new(None));
+
+    let audio_buffer_clone = audio_buffer.clone();
+    let start_time_clone = start_time.clone();
+    let mainloop_weak = mainloop.downgrade();
+
+    let props = properties! {
+        *pw::keys::MEDIA_TYPE => "Audio",
+        *pw::keys::MEDIA_CATEGORY => "Capture",
+        *pw::keys::MEDIA_ROLE => "Communication",
+        *pw::keys::NODE_NAME => "dev-voice-capture",
+        *pw::keys::AUDIO_CHANNELS => "1",
+        *pw::keys::AUDIO_FORMAT => "F32LE",
+    };
+
+    let stream = pw::stream::StreamBox::new(&core, "dev-voice", props).context("Failed to create stream")?;
+
+    let _listener = stream
+        .add_local_listener_with_user_data(())
+        .state_changed(|_, _, old, new| {
+            info!("Stream state changed: {:?} -> {:?}", old, new);
+        })
+        .param_changed(|_, _, id, pod| {
+            if let Some(_pod) = pod {
+                if id == spa::param::ParamType::Format.as_raw() {
+                    info!("Format negotiated");
+                }
+            }
+        })
+        .process(move |stream, _| {
+            // Initialize start time on first process call
+            {
+                let mut start = start_time_clone.borrow_mut();
+                if start.is_none() {
+                    *start = Some(Instant::now());
+                    info!("Recording started - speak now!");
+                }
+            }
+
+            // Check for stop signal
+            if should_stop() {
+                info!("Stop signal received");
+                if let Some(ml) = mainloop_weak.upgrade() {
+                    ml.quit();
+                }
+                return;
+            }
+
+            // Check timeout
+            let start = start_time_clone.borrow();
+            if let Some(start_instant) = *start {
+                if start_instant.elapsed() >= Duration::from_secs(max_duration_secs as u64) {
+                    info!("Toggle mode timeout reached ({}s)", max_duration_secs);
+                    if let Some(ml) = mainloop_weak.upgrade() {
+                        ml.quit();
+                    }
+                    return;
+                }
+            }
+
+            // Dequeue and process buffer
+            if let Some(mut buffer) = stream.dequeue_buffer() {
+                let datas = buffer.datas_mut();
+                if let Some(data) = datas.first_mut() {
+                    let chunk = data.chunk();
+                    let offset = chunk.offset() as usize;
+                    let size = chunk.size() as usize;
+
+                    if let Some(slice) = data.data() {
+                        let actual_data = if offset + size <= slice.len() {
+                            &slice[offset..offset + size]
+                        } else {
+                            slice
+                        };
+
+                        let raw_samples = bytes_to_f32_samples(actual_data);
+                        let samples: Vec<f32> = raw_samples
+                            .chunks(2)
+                            .map(|chunk| {
+                                if chunk.len() == 2 {
+                                    (chunk[0] + chunk[1]) / 2.0
+                                } else {
+                                    chunk[0]
+                                }
+                            })
+                            .collect();
+                        if !samples.is_empty() {
+                            audio_buffer_clone.borrow_mut().extend_from_slice(&samples);
+                            debug!("Captured {} mono samples", samples.len());
+                        }
+                    }
+                }
+            }
+        })
+        .register()?;
+
+    let obj = pw::spa::pod::object!(
+        pw::spa::utils::SpaTypes::ObjectParamFormat,
+        pw::spa::param::ParamType::EnumFormat,
+        pw::spa::pod::property!(
+            pw::spa::param::format::FormatProperties::MediaType,
+            Id,
+            pw::spa::param::format::MediaType::Audio
+        ),
+        pw::spa::pod::property!(
+            pw::spa::param::format::FormatProperties::MediaSubtype,
+            Id,
+            pw::spa::param::format::MediaSubtype::Raw
+        ),
+        pw::spa::pod::property!(
+            pw::spa::param::format::FormatProperties::AudioFormat,
+            Id,
+            spa_lib::param::audio::AudioFormat::F32LE
+        ),
+        pw::spa::pod::property!(
+            pw::spa::param::format::FormatProperties::AudioChannels,
+            Int,
+            1
+        ),
+    );
+
+    let values: Vec<u8> = pw::spa::pod::serialize::PodSerializer::serialize(
+        Cursor::new(Vec::new()),
+        &pw::spa::pod::Value::Object(obj),
+    )
+    .map_err(|e| anyhow::anyhow!("Failed to serialize audio params: {:?}", e))?
+    .0
+    .into_inner();
+
+    let mut params = [Pod::from_bytes(&values).expect("Failed to create Pod from bytes")];
+
+    stream
+        .connect(
+            spa::utils::Direction::Input,
+            None,
+            StreamFlags::AUTOCONNECT | StreamFlags::MAP_BUFFERS | StreamFlags::RT_PROCESS,
+            &mut params,
+        )
+        .context("Failed to connect stream")?;
+
+    info!("Listening... (run 'dev-voice stop' to finish)");
+
+    let capture_start = Instant::now();
+    mainloop.run();
+    let capture_duration = capture_start.elapsed();
+
+    let raw_samples = audio_buffer.borrow().clone();
+
+    if raw_samples.is_empty() {
+        warn!("No audio captured - check microphone permissions");
+        return Ok(Vec::new());
+    }
+
+    let actual_duration_secs = capture_duration.as_secs_f32();
+    let detected_rate = (raw_samples.len() as f32 / actual_duration_secs) as u32;
+    info!(
+        "Captured {} samples in {:.2}s (detected ~{}Hz)",
+        raw_samples.len(),
+        actual_duration_secs,
+        detected_rate
+    );
+
+    // Resample to 16kHz for Whisper
+    let target_rate = 16000u32;
+    let samples = if detected_rate > target_rate + 1000 || detected_rate < target_rate - 1000 {
+        info!("Resampling from ~{}Hz to {}Hz", detected_rate, target_rate);
+        resample(&raw_samples, detected_rate, target_rate)
+    } else {
+        raw_samples
+    };
+
+    let final_duration = samples.len() as f32 / 16000.0;
+    info!("Final audio: {} samples ({:.2}s at 16kHz)", samples.len(), final_duration);
+
+    Ok(samples)
+}
+
+/// High-quality resampling using rubato (sinc interpolation)
+fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
+    use rubato::{FftFixedIn, Resampler};
+
+    // rubato works with f64, convert
+    let samples_f64: Vec<f64> = samples.iter().map(|&s| s as f64).collect();
+
+    // Create resampler: chunk size of 1024 is a good balance
+    let chunk_size = 1024;
+    let mut resampler = match FftFixedIn::<f64>::new(
+        from_rate as usize,
+        to_rate as usize,
+        chunk_size,
+        2,  // sub_chunks
+        1,  // channels (mono)
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            warn!("Failed to create resampler: {}, using linear fallback", e);
+            return resample_linear(samples, from_rate as f32 / to_rate as f32);
+        }
+    };
+
+    let mut output_f64 = Vec::new();
+
+    // Process in chunks
+    for chunk in samples_f64.chunks(chunk_size) {
+        let input = vec![chunk.to_vec()];
+
+        // Pad last chunk if needed
+        let input = if chunk.len() < chunk_size {
+            let mut padded = chunk.to_vec();
+            padded.resize(chunk_size, 0.0);
+            vec![padded]
+        } else {
+            input
+        };
+
+        match resampler.process(&input, None) {
+            Ok(output) => {
+                if let Some(channel) = output.first() {
+                    output_f64.extend(channel);
+                }
+            }
+            Err(e) => {
+                warn!("Resampling error: {}, using linear fallback", e);
+                return resample_linear(samples, from_rate as f32 / to_rate as f32);
+            }
+        }
+    }
+
+    // Convert back to f32
+    output_f64.iter().map(|&s: &f64| s as f32).collect()
+}
+
+/// Fallback linear resampling (used if rubato fails)
+fn resample_linear(samples: &[f32], ratio: f32) -> Vec<f32> {
     let output_len = (samples.len() as f32 / ratio) as usize;
     let mut output = Vec::with_capacity(output_len);
 
@@ -246,7 +494,6 @@ fn resample(samples: &[f32], ratio: f32) -> Vec<f32> {
         let frac = src_pos - src_idx as f32;
 
         if src_idx + 1 < samples.len() {
-            // Linear interpolation
             let sample = samples[src_idx] * (1.0 - frac) + samples[src_idx + 1] * frac;
             output.push(sample);
         } else if src_idx < samples.len() {

@@ -1,11 +1,20 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use tracing::info;
+use tracing_appender::rolling::{RollingFileAppender, Rotation};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 mod audio;
 mod config;
+mod error;
+mod model;
 mod output;
+mod state;
 mod transcribe;
+
+/// Maximum recording duration in toggle mode (5 minutes)
+const TOGGLE_MODE_TIMEOUT_SECS: u32 = 300;
 
 #[derive(Parser)]
 #[command(name = "dev-voice")]
@@ -22,16 +31,23 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Start listening for voice input
+    /// Start or stop voice recording (toggle mode when duration=0)
     Start {
         /// Override model path
         #[arg(short, long)]
         model: Option<String>,
 
-        /// Recording duration in seconds (0 = until silence)
+        /// Recording duration in seconds (0 = toggle mode)
         #[arg(short, long, default_value = "0")]
         duration: u32,
+
+        /// Copy to clipboard instead of typing
+        #[arg(short, long)]
+        clipboard: bool,
     },
+
+    /// Stop a running recording
+    Stop,
 
     /// Download a whisper model
     Download {
@@ -58,16 +74,15 @@ enum Commands {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // Initialize logging
-    let filter = if cli.verbose { "debug" } else { "info" };
-    tracing_subscriber::fmt()
-        .with_env_filter(filter)
-        .with_target(false)
-        .init();
+    // Initialize logging with both console and file output
+    init_logging(cli.verbose)?;
 
     match cli.command {
-        Commands::Start { model, duration } => {
-            cmd_start(model, duration)?;
+        Commands::Start { model, duration, clipboard } => {
+            cmd_start(model, duration, clipboard)?;
+        }
+        Commands::Stop => {
+            cmd_stop()?;
         }
         Commands::Download { model } => {
             cmd_download(&model)?;
@@ -83,17 +98,72 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn cmd_start(model_override: Option<String>, duration: u32) -> Result<()> {
-    info!("Loading configuration...");
-    let mut cfg = config::load()?;
+/// Initialize logging with console and file output
+fn init_logging(verbose: bool) -> Result<()> {
+    let filter = if verbose { "debug" } else { "info" };
 
+    // Set up file logging
+    let log_dir = state::get_log_dir()?;
+    let file_appender = RollingFileAppender::new(Rotation::DAILY, log_dir, "dev-voice.log");
+
+    // Create layers
+    let file_layer = tracing_subscriber::fmt::layer()
+        .with_writer(file_appender)
+        .with_ansi(false)
+        .with_target(false);
+
+    let console_layer = tracing_subscriber::fmt::layer()
+        .with_target(false);
+
+    // Combine layers
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(filter))
+        .with(console_layer)
+        .with(file_layer)
+        .init();
+
+    Ok(())
+}
+
+fn cmd_start(model_override: Option<String>, duration: u32, clipboard: bool) -> Result<()> {
+    // Check if toggle mode (duration = 0)
+    if duration == 0 {
+        return cmd_start_toggle(model_override, clipboard);
+    }
+
+    // Fixed duration mode
+    cmd_start_fixed(model_override, duration, clipboard)
+}
+
+/// Toggle mode: first call starts, second call stops
+fn cmd_start_toggle(model_override: Option<String>, clipboard: bool) -> Result<()> {
+    // Check if already recording
+    if let Some(recording_state) = state::is_recording()? {
+        info!("Recording in progress, sending stop signal...");
+        state::stop_recording(&recording_state)?;
+        println!("Stopping recording...");
+        return Ok(());
+    }
+
+    // Start new recording
+    info!("Starting toggle mode recording (max {} seconds)", TOGGLE_MODE_TIMEOUT_SECS);
+    println!("Recording started. Run 'dev-voice start' again or 'dev-voice stop' to finish.");
+
+    // Set up signal handler and mark as recording
+    state::toggle::setup_signal_handler()?;
+    state::toggle::start_recording()?;
+
+    // Ensure cleanup on exit
+    let _cleanup = scopeguard::guard((), |_| {
+        let _ = state::toggle::cleanup_recording();
+    });
+
+    // Load config and run recording
+    let mut cfg = config::load()?;
     if let Some(model_path) = model_override {
         cfg.model.path = model_path.into();
     }
 
-    info!("Model: {}", cfg.model.path.display());
-
-    // Check model exists
     if !cfg.model.path.exists() {
         anyhow::bail!(
             "Model not found: {}\nRun: dev-voice download {}",
@@ -102,19 +172,26 @@ fn cmd_start(model_override: Option<String>, duration: u32) -> Result<()> {
         );
     }
 
-    // Detect display server
     let display_server = output::DisplayServer::detect();
-    info!("Display server: {:?}", display_server);
+    let output_mode = if clipboard {
+        output::OutputMode::Clipboard
+    } else {
+        output::OutputMode::Type
+    };
 
-    // Initialize transcriber
     info!("Loading whisper model...");
     let transcriber = transcribe::Transcriber::new(&cfg.model.path)?;
     info!("Model loaded successfully");
 
-    // Initialize audio capture
-    info!("Initializing audio capture...");
-    let audio_data = audio::capture(duration, cfg.audio.sample_rate)?;
+    // Capture audio with toggle mode (checks for stop signal)
+    info!("Listening... (press Ctrl+C or run 'dev-voice stop' to finish)");
+    let audio_data = audio::capture_toggle(TOGGLE_MODE_TIMEOUT_SECS, cfg.audio.sample_rate)?;
     info!("Captured {} samples", audio_data.len());
+
+    if audio_data.is_empty() {
+        info!("No audio captured");
+        return Ok(());
+    }
 
     // Transcribe
     info!("Transcribing...");
@@ -126,55 +203,92 @@ fn cmd_start(model_override: Option<String>, duration: u32) -> Result<()> {
     }
 
     info!("Transcribed: {}", text);
-
-    // Inject text
-    output::inject_text(&text, &display_server)?;
-    info!("Text injected");
+    output::output_text(&text, output_mode, &display_server)?;
+    info!("Text output via {:?}", output_mode);
 
     Ok(())
 }
 
-fn cmd_download(model: &str) -> Result<()> {
-    let cfg = config::load()?;
-    let models_dir = cfg.model.path.parent().unwrap_or(std::path::Path::new("."));
+/// Fixed duration recording mode
+fn cmd_start_fixed(model_override: Option<String>, duration: u32, clipboard: bool) -> Result<()> {
+    info!("Loading configuration...");
+    let mut cfg = config::load()?;
 
-    // Ensure models directory exists
-    std::fs::create_dir_all(models_dir)?;
+    if let Some(model_path) = model_override {
+        cfg.model.path = model_path.into();
+    }
 
-    let model_name = if model.starts_with("ggml-") {
-        format!("{}.bin", model)
+    info!("Model: {}", cfg.model.path.display());
+
+    if !cfg.model.path.exists() {
+        anyhow::bail!(
+            "Model not found: {}\nRun: dev-voice download {}",
+            cfg.model.path.display(),
+            cfg.model.path.file_stem().unwrap_or_default().to_string_lossy()
+        );
+    }
+
+    let display_server = output::DisplayServer::detect();
+    info!("Display server: {:?}", display_server);
+
+    let output_mode = if clipboard {
+        output::OutputMode::Clipboard
     } else {
-        format!("ggml-{}.bin", model)
+        output::OutputMode::Type
     };
+    info!("Output mode: {:?}", output_mode);
 
-    let url = format!(
-        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{}",
-        model_name
-    );
+    info!("Loading whisper model...");
+    let transcriber = transcribe::Transcriber::new(&cfg.model.path)?;
+    info!("Model loaded successfully");
 
-    let dest = models_dir.join(&model_name);
+    info!("Recording for {} seconds...", duration);
+    let audio_data = audio::capture(duration, cfg.audio.sample_rate)?;
+    info!("Captured {} samples", audio_data.len());
 
-    if dest.exists() {
-        info!("Model already exists: {}", dest.display());
+    info!("Transcribing...");
+    let text = transcriber.transcribe(&audio_data)?;
+
+    if text.is_empty() {
+        info!("No speech detected");
         return Ok(());
     }
 
-    info!("Downloading {} to {}", model_name, dest.display());
-    info!("URL: {}", url);
+    info!("Transcribed: {}", text);
+    output::output_text(&text, output_mode, &display_server)?;
+    info!("Text output via {:?}", output_mode);
 
-    // Use curl for download with progress
-    let status = std::process::Command::new("curl")
-        .args(["-L", "-o"])
-        .arg(&dest)
-        .arg("--progress-bar")
-        .arg(&url)
-        .status()?;
+    Ok(())
+}
 
-    if !status.success() {
-        anyhow::bail!("Download failed");
+/// Stop a running recording
+fn cmd_stop() -> Result<()> {
+    if let Some(recording_state) = state::is_recording()? {
+        info!("Stopping recording (PID: {})", recording_state.pid);
+        state::stop_recording(&recording_state)?;
+        println!("Stop signal sent to recording process");
+    } else {
+        println!("No recording in progress");
     }
+    Ok(())
+}
 
-    info!("Download complete: {}", dest.display());
+fn cmd_download(model_name: &str) -> Result<()> {
+    let cfg = config::load()?;
+    let models_dir = cfg.model.path.parent().unwrap_or(std::path::Path::new("."));
+
+    let model_info = model::ModelInfo::find(model_name).ok_or_else(|| {
+        let available = model::ModelInfo::available_models();
+        anyhow::anyhow!(
+            "Unknown model: {}\nAvailable models: {}",
+            model_name,
+            available.join(", ")
+        )
+    })?;
+
+    let dest = model::download_model(model_info, models_dir)?;
+    info!("Model ready: {}", dest.display());
+
     Ok(())
 }
 
@@ -192,7 +306,6 @@ fn cmd_config(show_path: bool, reset: bool) -> Result<()> {
         return Ok(());
     }
 
-    // Print current config
     let cfg = config::load()?;
     let toml = toml::to_string_pretty(&cfg)?;
     println!("{}", toml);
@@ -203,7 +316,6 @@ fn cmd_config(show_path: bool, reset: bool) -> Result<()> {
 fn cmd_doctor() -> Result<()> {
     println!("Checking system dependencies...\n");
 
-    // Check wtype
     let wtype_ok = std::process::Command::new("which")
         .arg("wtype")
         .output()
@@ -214,7 +326,6 @@ fn cmd_doctor() -> Result<()> {
         if wtype_ok { "OK" } else { "MISSING" }
     );
 
-    // Check xdotool
     let xdotool_ok = std::process::Command::new("which")
         .arg("xdotool")
         .output()
@@ -225,7 +336,6 @@ fn cmd_doctor() -> Result<()> {
         if xdotool_ok { "OK" } else { "MISSING" }
     );
 
-    // Check display server
     let display = output::DisplayServer::detect();
     println!("\nDisplay server: {:?}", display);
 
@@ -241,7 +351,6 @@ fn cmd_doctor() -> Result<()> {
         _ => {}
     }
 
-    // Check model
     let cfg = config::load()?;
     let model_ok = cfg.model.path.exists();
     println!(
@@ -254,7 +363,6 @@ fn cmd_doctor() -> Result<()> {
         println!("\nDownload a model with: dev-voice download base.en");
     }
 
-    // Check PipeWire
     let pw_ok = std::process::Command::new("pw-cli")
         .arg("info")
         .output()
@@ -264,6 +372,11 @@ fn cmd_doctor() -> Result<()> {
         "\n[{}] PipeWire",
         if pw_ok { "OK" } else { "MISSING" }
     );
+
+    // Show log location
+    if let Ok(log_dir) = state::get_log_dir() {
+        println!("\nLogs: {}", log_dir.display());
+    }
 
     println!();
     Ok(())
