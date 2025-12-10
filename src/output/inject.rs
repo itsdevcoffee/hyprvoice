@@ -89,6 +89,8 @@ pub fn copy_to_clipboard(text: &str, display: &DisplayServer) -> Result<()> {
 
 fn inject_wayland(text: &str) -> Result<()> {
     let status = Command::new("wtype")
+        .arg("-d")  // delay between keystrokes in ms
+        .arg("1")   // 1ms
         .arg("--")
         .arg(text)
         .status()

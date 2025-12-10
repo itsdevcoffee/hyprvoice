@@ -193,6 +193,13 @@ fn cmd_start_toggle(model_override: Option<String>, clipboard: bool) -> Result<(
         return Ok(());
     }
 
+    // Create processing state file
+    let processing_file = state::get_state_dir()?.join("processing");
+    std::fs::write(&processing_file, "")?;
+    let _processing_cleanup = scopeguard::guard((), |_| {
+        let _ = std::fs::remove_file(&processing_file);
+    });
+
     // Transcribe
     info!("Transcribing...");
     let text = transcriber.transcribe(&audio_data)?;
@@ -205,6 +212,14 @@ fn cmd_start_toggle(model_override: Option<String>, clipboard: bool) -> Result<(
     info!("Transcribed: {}", text);
     output::output_text(&text, output_mode, &display_server)?;
     info!("Text output via {:?}", output_mode);
+
+    // Send notification with preview
+    let preview = if text.len() > 80 {
+        format!("{}...", text.chars().take(77).collect::<String>())
+    } else {
+        text
+    };
+    send_notification("Transcription Complete", &preview, "normal");
 
     Ok(())
 }
@@ -246,6 +261,13 @@ fn cmd_start_fixed(model_override: Option<String>, duration: u32, clipboard: boo
     let audio_data = audio::capture(duration, cfg.audio.sample_rate)?;
     info!("Captured {} samples", audio_data.len());
 
+    // Create processing state file
+    let processing_file = state::get_state_dir()?.join("processing");
+    std::fs::write(&processing_file, "")?;
+    let _processing_cleanup = scopeguard::guard((), |_| {
+        let _ = std::fs::remove_file(&processing_file);
+    });
+
     info!("Transcribing...");
     let text = transcriber.transcribe(&audio_data)?;
 
@@ -257,6 +279,14 @@ fn cmd_start_fixed(model_override: Option<String>, duration: u32, clipboard: boo
     info!("Transcribed: {}", text);
     output::output_text(&text, output_mode, &display_server)?;
     info!("Text output via {:?}", output_mode);
+
+    // Send notification with preview
+    let preview = if text.len() > 80 {
+        format!("{}...", text.chars().take(77).collect::<String>())
+    } else {
+        text
+    };
+    send_notification("Transcription Complete", &preview, "normal");
 
     Ok(())
 }
@@ -311,6 +341,19 @@ fn cmd_config(show_path: bool, reset: bool) -> Result<()> {
     println!("{}", toml);
 
     Ok(())
+}
+
+/// Send desktop notification
+fn send_notification(title: &str, body: &str, urgency: &str) {
+    let _ = std::process::Command::new("notify-send")
+        .args([
+            "-a", "dev-voice",
+            "-i", "audio-input-microphone",
+            "-u", urgency,
+            title,
+            body,
+        ])
+        .spawn();
 }
 
 fn cmd_doctor() -> Result<()> {
