@@ -393,6 +393,21 @@ pub fn capture_toggle(max_duration_secs: u32, _sample_rate: u32) -> Result<Vec<f
 
     info!("Listening... (run 'dev-voice stop' to finish)");
 
+    // Add timer to check stop signal every 100ms
+    let mainloop_for_timer = mainloop.downgrade();
+    let timer = mainloop.loop_().add_timer(move |_| {
+        if should_stop() {
+            info!("Stop signal detected - shutting down");
+            if let Some(ml) = mainloop_for_timer.upgrade() {
+                ml.quit();
+            }
+        }
+    });
+    timer.update_timer(
+        Some(std::time::Duration::from_millis(100)),
+        Some(std::time::Duration::from_millis(100)),
+    );
+
     let capture_start = Instant::now();
     mainloop.run();
     let capture_duration = capture_start.elapsed();
