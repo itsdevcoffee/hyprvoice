@@ -31,8 +31,6 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-appender = "0.2"
 
-# Signal handling for toggle mode
-nix = { version = "0.30", features = ["signal", "process"] }
 scopeguard = "1.2"
 
 # HTTP downloads
@@ -45,6 +43,9 @@ hex = "0.4"
 # Better resampling
 rubato = "0.16"
 
+# Clipboard - always available
+arboard = "3.6"
+
 [dev-dependencies]
 tempfile = "3"
 mockall = "0.13"        # Mock traits for testing (PipeWire, Whisper)
@@ -56,6 +57,27 @@ default = []
 cuda = ["whisper-rs/cuda"]
 rocm = ["whisper-rs/hipblas"]
 vulkan = ["whisper-rs/vulkan"]
+
+# =============================================================================
+# Platform-specific dependencies
+# =============================================================================
+
+# Signal handling for toggle mode (Unix only - macOS and Linux)
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.30", features = ["signal", "process"] }
+
+# macOS - uses CoreGraphics automatically
+[target.'cfg(target_os = "macos")'.dependencies]
+enigo = { version = "0.6" }
+
+# Windows - uses SendInput API automatically
+[target.'cfg(target_os = "windows")'.dependencies]
+enigo = { version = "0.6" }
+
+# Linux - Wayland by default (most modern distros)
+# X11 users: change ["wayland"] to ["x11rb"] below
+[target.'cfg(target_os = "linux")'.dependencies]
+enigo = { version = "0.6", default-features = false, features = ["wayland"] }
 
 [profile.release]
 lto = true

@@ -4,18 +4,22 @@ Voice dictation for Linux developers. Capture speech, transcribe with Whisper, i
 
 ## Requirements
 
-### System Dependencies (Fedora)
+### System Dependencies
 
-```bash
-sudo dnf install -y pipewire-devel clang cmake wtype
-```
+**All platforms:**
+- Rust 1.85+ (for cargo build)
+- Clang (for whisper-rs build)
 
-### Runtime Dependencies
-
-- **PipeWire** (audio server) — pre-installed on modern Fedora/Ubuntu
-- **wtype** (Wayland) or **xdotool** (X11) — for text injection
+**Runtime dependencies:**
+- **Type mode:** None - fully self-contained
+- **Clipboard mode (Linux only):**
+  - Wayland: `wl-clipboard` (install: `sudo dnf install wl-clipboard`)
+  - X11: `xclip` (install: `sudo dnf install xclip`)
+- **macOS/Windows:** No dependencies for clipboard mode
 
 ## Build
+
+### Standard Build (Wayland on Linux, native on macOS/Windows)
 
 ```bash
 # Clone
@@ -27,6 +31,23 @@ cargo build --release
 
 # Binary at ./target/release/dev-voice
 ```
+
+### Platform-Specific Notes
+
+**Linux (Wayland):** Default configuration, works out of box on modern distros.
+
+**Linux (X11):** Edit `Cargo.toml` line 81, change:
+```toml
+# FROM:
+features = ["wayland"]
+# TO:
+features = ["x11rb"]
+```
+Then rebuild with `cargo build --release`.
+
+**macOS:** Uses native CoreGraphics, no configuration needed.
+
+**Windows:** Uses native SendInput API, no configuration needed.
 
 ### GPU Acceleration (optional)
 

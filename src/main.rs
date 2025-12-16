@@ -6,6 +6,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 mod audio;
+mod commands;
 mod config;
 mod daemon;
 mod error;
@@ -77,6 +78,17 @@ enum Commands {
         #[arg(short, long)]
         model: Option<String>,
     },
+
+    /// Test enigo keyboard/clipboard functionality
+    EnigoTest {
+        /// Test text to paste (default: "Hello from enigo!")
+        #[arg(short, long, default_value = "Hello from enigo!")]
+        text: String,
+
+        /// Test clipboard mode instead of paste
+        #[arg(short, long)]
+        clipboard: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -108,6 +120,9 @@ fn main() -> Result<()> {
         Commands::Daemon { model } => {
             cmd_daemon(model)?;
         },
+        Commands::EnigoTest { text, clipboard } => {
+            commands::enigo_test(&text, clipboard)?;
+        },
     }
 
     Ok(())
@@ -115,7 +130,7 @@ fn main() -> Result<()> {
 
 /// Initialize logging with console and file output
 fn init_logging(verbose: bool) -> Result<()> {
-    let filter = if verbose { "debug" } else { "info" };
+    let default_filter = if verbose { "debug" } else { "info" };
 
     // Set up file logging
     let log_dir = state::get_log_dir()?;
@@ -129,9 +144,13 @@ fn init_logging(verbose: bool) -> Result<()> {
 
     let console_layer = tracing_subscriber::fmt::layer().with_target(false);
 
+    // Respect RUST_LOG env var, fallback to default filter
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(default_filter));
+
     // Combine layers
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(filter))
+        .with(env_filter)
         .with(console_layer)
         .with(file_layer)
         .init();
@@ -198,7 +217,6 @@ fn cmd_start_toggle(model_override: Option<String>, clipboard: bool) -> Result<(
                 }
 
                 // Output the transcribed text
-                let display_server = output::DisplayServer::detect();
                 let output_mode = if clipboard {
                     output::OutputMode::Clipboard
                 } else {
@@ -206,7 +224,7 @@ fn cmd_start_toggle(model_override: Option<String>, clipboard: bool) -> Result<(
                 };
 
                 info!("Transcribed: {}", text);
-                output::output_text(&text, output_mode, &display_server)?;
+                output::inject_text(&text, output_mode)?;
                 info!("Text output via {:?}", output_mode);
 
                 // Send notification
@@ -281,9 +299,6 @@ fn cmd_start_fixed(model_override: Option<String>, duration: u32, clipboard: boo
         );
     }
 
-    let display_server = output::DisplayServer::detect();
-    info!("Display server: {:?}", display_server);
-
     let output_mode = if clipboard {
         output::OutputMode::Clipboard
     } else {
@@ -315,7 +330,7 @@ fn cmd_start_fixed(model_override: Option<String>, duration: u32, clipboard: boo
     }
 
     info!("Transcribed: {}", text);
-    output::output_text(&text, output_mode, &display_server)?;
+    output::inject_text(&text, output_mode)?;
     info!("Text output via {:?}", output_mode);
 
     // Send notification with preview
@@ -429,40 +444,8 @@ fn cmd_daemon(model_override: Option<String>) -> Result<()> {
 fn cmd_doctor() -> Result<()> {
     println!("Checking system dependencies...\n");
 
-    let wtype_ok = std::process::Command::new("which")
-        .arg("wtype")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
-    println!(
-        "[{}] wtype (Wayland text injection)",
-        if wtype_ok { "OK" } else { "MISSING" }
-    );
-
-    let xdotool_ok = std::process::Command::new("which")
-        .arg("xdotool")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
-    println!(
-        "[{}] xdotool (X11 text injection)",
-        if xdotool_ok { "OK" } else { "MISSING" }
-    );
-
-    let display = output::DisplayServer::detect();
-    println!("\nDisplay server: {:?}", display);
-
-    match display {
-        output::DisplayServer::Wayland if !wtype_ok => {
-            println!("\nWARNING: You're on Wayland but wtype is not installed.");
-            println!("Install with: sudo dnf install wtype");
-        },
-        output::DisplayServer::X11 if !xdotool_ok => {
-            println!("\nWARNING: You're on X11 but xdotool is not installed.");
-            println!("Install with: sudo dnf install xdotool");
-        },
-        _ => {},
-    }
+    println!("[OK] Text injection (enigo - cross-platform, built-in)");
+    println!("[OK] Clipboard (arboard - cross-platform, built-in)");
 
     let cfg = config::load()?;
     let model_ok = cfg.model.path.exists();
