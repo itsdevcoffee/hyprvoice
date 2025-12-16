@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+#[cfg(not(target_os = "linux"))]
 use arboard::Clipboard;
 use enigo::{Enigo, Keyboard, Settings};
 use tracing::info;

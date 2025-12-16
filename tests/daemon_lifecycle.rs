@@ -5,13 +5,14 @@
 //! These tests use serial_test to run sequentially because they share
 //! the same Unix socket path.
 
-use dev_voice::daemon::protocol::{DaemonRequest, DaemonResponse};
+use dev_voice::daemon::protocol::DaemonRequest;
 use dev_voice::daemon::{is_daemon_running, send_request};
 use serial_test::serial;
 use std::thread;
 use std::time::Duration;
 
 /// Helper to wait for daemon to be ready (up to 5 seconds)
+#[allow(dead_code)] // Reserved for future daemon integration tests
 fn wait_for_daemon_ready() -> bool {
     for _ in 0..50 {
         if is_daemon_running() {
@@ -23,6 +24,7 @@ fn wait_for_daemon_ready() -> bool {
 }
 
 /// Helper to wait for daemon to shut down (up to 2 seconds)
+#[allow(dead_code)] // Reserved for future daemon integration tests
 fn wait_for_daemon_shutdown() -> bool {
     for _ in 0..20 {
         if !is_daemon_running() {

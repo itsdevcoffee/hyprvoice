@@ -86,6 +86,18 @@ Add to `~/.config/hypr/hyprland.conf`:
 bind = SUPER, V, exec, dev-voice start --duration 5
 ```
 
+## Breaking Changes in v0.2.0 (Phase 4)
+
+**Type mode no longer preserves clipboard:**
+- Previous versions (Phase 3) used paste shortcuts (Ctrl+V) which required saving/restoring clipboard
+- Current version types text directly at the cursor using `enigo.text()` - more reliable but doesn't touch clipboard
+- **Migration:** If you need clipboard-based workflow, use clipboard mode: `dev-voice start -c`
+
+**Cross-platform text injection:**
+- Migrated from Linux-only tools (wtype/xdotool) to cross-platform enigo library
+- Type mode works on Linux (Wayland/X11), macOS, and Windows
+- Clipboard mode requires `wl-clipboard` (Wayland) or `xclip` (X11) on Linux
+
 ## Configuration
 
 Config file: `~/.config/dev-voice/config.toml`

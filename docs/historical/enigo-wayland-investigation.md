@@ -1,8 +1,9 @@
-# enigo Wayland Paste Issue
+# enigo Wayland Paste Investigation
 
-**Status:** Blocked - Key simulation failing on Wayland/Hyprland
+**Status:** ✅ Resolved - Migrated to direct typing (Phase 4, commit 68d867c)
+**Resolution:** Abandoned paste shortcuts in favor of `enigo.text()` direct typing
 
-## Problem
+## Historical Context - Problem
 
 Migrated from wtype/xdotool to enigo v0.6 for cross-platform text injection. Clipboard operations work perfectly, but paste keyboard shortcuts fail.
 
@@ -148,10 +149,20 @@ enigo.key(Key::Raw(25), Direction::Press)?;  // V keycode on X11
 - `src/output/inject.rs` - Backed up as `inject.rs.wtype-backup`
 - `src/main.rs` - Updated API calls (removed DisplayServer param)
 
-## Test Commands
+## Final Resolution (Phase 4)
+
+After exhaustive debugging (20ms/50ms delays, different key APIs), we chose **pragmatic simplification**:
+
+- **Adopted:** Direct text typing via `enigo.text()` - simple, reliable, cross-platform
+- **Abandoned:** Paste shortcuts (Ctrl+V, Ctrl+Shift+V) - too unreliable on Wayland
+- **Result:** 330 → 120 lines (-63%), works on Linux/macOS/Windows
+
+See `docs/project/phase4-implementation-summary.md` for full details.
+
+## Test Commands (Historical)
 
 ```bash
-# Test Type mode (shows the bug)
+# Test Type mode (showed the bug - now fixed with direct typing)
 RUST_LOG=debug cargo run -- start -d 3
 
 # Test Clipboard mode (works fine)
