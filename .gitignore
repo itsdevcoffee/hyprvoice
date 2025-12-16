@@ -22,3 +22,5 @@ Thumbs.db
 .env.local
 coverage/
 *.profraw
+
+docs/tmp/
