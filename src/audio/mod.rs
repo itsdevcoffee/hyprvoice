@@ -80,7 +80,8 @@ pub fn capture(duration_secs: u32, _sample_rate: u32) -> Result<Vec<f32>> {
         .map(|mutex| mutex.into_inner().unwrap())
         .unwrap_or_else(|arc| arc.lock().unwrap().clone());
 
-    let actual_duration = samples.len() as f32 / (device_sample_rate * device_channels as u32) as f32;
+    let actual_duration =
+        samples.len() as f32 / (device_sample_rate * device_channels as u32) as f32;
     info!(
         "Captured {} samples ({:.2}s at {}Hz, {} channels)",
         samples.len(),
@@ -132,7 +133,8 @@ pub fn capture_toggle(max_duration_secs: u32, _sample_rate: u32) -> Result<Vec<f
     let device_sample_rate = default_config.sample_rate().0;
     let device_channels = default_config.channels();
 
-    let expected_samples = (device_sample_rate * max_duration_secs) as usize * device_channels as usize;
+    let expected_samples =
+        (device_sample_rate * max_duration_secs) as usize * device_channels as usize;
     let buffer = Arc::new(Mutex::new(Vec::with_capacity(expected_samples)));
     let buffer_clone = buffer.clone();
 
@@ -185,7 +187,8 @@ pub fn capture_toggle(max_duration_secs: u32, _sample_rate: u32) -> Result<Vec<f
         .map(|mutex| mutex.into_inner().unwrap())
         .unwrap_or_else(|arc| arc.lock().unwrap().clone());
 
-    let actual_duration = samples.len() as f32 / (device_sample_rate * device_channels as u32) as f32;
+    let actual_duration =
+        samples.len() as f32 / (device_sample_rate * device_channels as u32) as f32;
     info!(
         "Captured {} samples ({:.2}s at {}Hz, {} channels)",
         samples.len(),
