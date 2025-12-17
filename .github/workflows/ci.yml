@@ -29,7 +29,9 @@ jobs:
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libclang-dev libasound2-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev libasound2-dev pkg-config
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -71,7 +73,9 @@ jobs:
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libclang-dev libasound2-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev libasound2-dev pkg-config
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -117,7 +121,9 @@ jobs:
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libclang-dev libasound2-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev libasound2-dev pkg-config
 
       - name: Cache cargo registry
         uses: actions/cache@v4
