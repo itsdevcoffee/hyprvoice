@@ -9,7 +9,8 @@ repository = "https://github.com/yourusername/dev-voice"
 
 [dependencies]
 # Speech recognition
-whisper-rs = "0.15"
+# Using git version for macOS 15 ARM build fix (ggml issue #1343, fixed Sept 23, 2025)
+whisper-rs = { git = "https://codeberg.org/tazz4843/whisper-rs" }
 
 # Cross-platform audio (REPLACES pipewire + libspa)
 cpal = "0.16"
