@@ -211,7 +211,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libclang-dev libasound2-dev pkg-config
+          sudo apt-get install -y libclang-dev libasound2-dev pkg-config libxkbcommon-dev
 
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
