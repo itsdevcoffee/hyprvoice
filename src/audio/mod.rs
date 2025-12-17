@@ -20,7 +20,10 @@ pub fn capture(duration_secs: u32, sample_rate: u32) -> Result<Vec<f32>> {
         .default_input_device()
         .context("No input device available. Check microphone permissions.")?;
 
-    info!("Using audio device: {}", device.name().unwrap_or_else(|_| "Unknown".to_string()));
+    info!(
+        "Using audio device: {}",
+        device.name().unwrap_or_else(|_| "Unknown".to_string())
+    );
 
     // Configure for mono f32 at requested sample rate
     let config = cpal::StreamConfig {
@@ -205,7 +208,7 @@ fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
         Err(e) => {
             warn!("Failed to create resampler: {}, using linear fallback", e);
             return resample_linear(samples, from_rate as f32 / to_rate as f32);
-        }
+        },
     };
 
     let mut output_f64 = Vec::new();
@@ -228,11 +231,11 @@ fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
                 if let Some(channel) = output.first() {
                     output_f64.extend(channel);
                 }
-            }
+            },
             Err(e) => {
                 warn!("Resampling error: {}, using linear fallback", e);
                 return resample_linear(samples, from_rate as f32 / to_rate as f32);
-            }
+            },
         }
     }
 

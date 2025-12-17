@@ -25,7 +25,7 @@ fn test_request_start_recording_serialization() {
     match parsed {
         DaemonRequest::StartRecording { max_duration } => {
             assert_eq!(max_duration, 300);
-        }
+        },
         _ => panic!("Expected StartRecording variant"),
     }
 }
@@ -65,7 +65,7 @@ fn test_response_ok_serialization() {
     match parsed {
         DaemonResponse::Ok { message } => {
             assert_eq!(message, "pong");
-        }
+        },
         _ => panic!("Expected Ok variant"),
     }
 }
@@ -93,7 +93,7 @@ fn test_response_success_serialization() {
     match parsed {
         DaemonResponse::Success { text } => {
             assert_eq!(text, "transcribed text");
-        }
+        },
         _ => panic!("Expected Success variant"),
     }
 }
@@ -109,7 +109,7 @@ fn test_response_error_serialization() {
     match parsed {
         DaemonResponse::Error { message } => {
             assert_eq!(message, "Already recording");
-        }
+        },
         _ => panic!("Expected Error variant"),
     }
 }
@@ -146,7 +146,7 @@ fn test_response_with_special_characters() {
     match parsed {
         DaemonResponse::Success { text } => {
             assert_eq!(text, "Text with \"quotes\" and\nnewlines\tand\ttabs");
-        }
+        },
         _ => panic!("Expected Success variant"),
     }
 }
@@ -162,7 +162,7 @@ fn test_response_with_unicode() {
     match parsed {
         DaemonResponse::Success { text } => {
             assert_eq!(text, "Unicode: 你好世界 🎉 émojis");
-        }
+        },
         _ => panic!("Expected Success variant"),
     }
 }

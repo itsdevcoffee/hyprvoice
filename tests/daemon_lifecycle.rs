@@ -75,7 +75,7 @@ fn test_daemon_request_without_daemon() {
     match result {
         Ok(_) => {
             // Daemon is running, that's fine
-        }
+        },
         Err(e) => {
             // Should get connection error, not a panic
             let err_msg = e.to_string();
@@ -84,7 +84,7 @@ fn test_daemon_request_without_daemon() {
                 "Error should mention connection or daemon: {}",
                 err_msg
             );
-        }
+        },
     }
 }
 

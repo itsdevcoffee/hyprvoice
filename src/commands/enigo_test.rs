@@ -43,19 +43,19 @@ fn test_clipboard_operations() -> Result<()> {
     match arboard::Clipboard::new().and_then(|mut cb| cb.get_text()) {
         Ok(content) => {
             println!("✓ Clipboard read successful ({} chars)", content.len());
-        }
+        },
         Err(e) => {
             println!("✗ Clipboard read failed: {}", e);
-        }
+        },
     }
 
     match arboard::Clipboard::new().and_then(|mut cb| cb.set_text("enigo-test")) {
         Ok(()) => {
             println!("✓ Clipboard write successful");
-        }
+        },
         Err(e) => {
             println!("✗ Clipboard write failed: {}", e);
-        }
+        },
     }
 
     Ok(())
@@ -85,10 +85,10 @@ fn execute_injection(text: &str, mode: OutputMode) -> Result<()> {
                 println!("\n✓ Text typed at cursor!");
             }
             Ok(())
-        }
+        },
         Err(e) => {
             println!("✗ inject_text failed: {}", e);
             Err(e)
-        }
+        },
     }
 }

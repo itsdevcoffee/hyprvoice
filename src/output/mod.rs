@@ -41,12 +41,12 @@ pub fn inject_text(text: &str, mode: OutputMode) -> Result<()> {
             copy_to_clipboard(text)?;
             info!("Copied to clipboard: {} chars", text.len());
             Ok(())
-        }
+        },
         OutputMode::Type => {
             type_text(text)?;
             info!("Typed {} chars at cursor", text.len());
             Ok(())
-        }
+        },
     }
 }
 
@@ -111,11 +111,9 @@ fn copy_to_clipboard(text: &str) -> Result<()> {
 /// Uses the input_method protocol on Wayland and equivalent on X11/macOS/Windows.
 /// This bypasses clipboard entirely and works reliably across platforms.
 fn type_text(text: &str) -> Result<()> {
-    let mut enigo = Enigo::new(&Settings::default())
-        .context("Failed to initialize enigo")?;
+    let mut enigo = Enigo::new(&Settings::default()).context("Failed to initialize enigo")?;
 
-    enigo.text(text)
-        .context("Failed to type text")?;
+    enigo.text(text).context("Failed to type text")?;
 
     Ok(())
 }

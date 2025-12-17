@@ -56,6 +56,7 @@ assert_matches = "1.5"  # Pattern matching assertions
 [features]
 default = []
 cuda = ["whisper-rs/cuda"]
+metal = ["whisper-rs/metal"]
 rocm = ["whisper-rs/hipblas"]
 vulkan = ["whisper-rs/vulkan"]
 
