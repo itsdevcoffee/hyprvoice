@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CMAKE_CXX_STANDARD: 17  # whisper.cpp git version requires C++14+
 
 jobs:
   check:
@@ -31,7 +32,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libclang-dev libasound2-dev pkg-config
+          sudo apt-get install -y libclang-dev libasound2-dev pkg-config libxkbcommon-dev
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -75,7 +76,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libclang-dev libasound2-dev pkg-config
+          sudo apt-get install -y libclang-dev libasound2-dev pkg-config libxkbcommon-dev
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -123,7 +124,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libclang-dev libasound2-dev pkg-config
+          sudo apt-get install -y libclang-dev libasound2-dev pkg-config libxkbcommon-dev
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -161,7 +162,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libclang-dev libasound2-dev pkg-config
+          sudo apt-get install -y libclang-dev libasound2-dev pkg-config libxkbcommon-dev
 
       - name: Cache cargo registry
         uses: actions/cache@v4
