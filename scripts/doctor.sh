@@ -92,7 +92,7 @@ if command -v dev-voice-cuda12 &> /dev/null; then
     if command -v dev-voice-gpu &> /dev/null; then
         echo "dev-voice-cuda12 (GPU) via dev-voice-gpu wrapper (strict mode - REAL RUNTIME):"
         echo "This is what actually loads when users run 'dev-voice-gpu':"
-        DEVVOICE_DEBUG=1 dev-voice-gpu --version 2>&1 | grep -A 10 "Libraries that will be loaded:" | grep -E 'libcuda|cudart|cublas|cublasLt|cudnn' || echo "  See debug output above"
+        DEVVOICE_DEBUG=1 dev-voice-gpu --version 2>&1 | grep -A 10 "Libraries that will be loaded:" | grep -E 'libcuda|cudart|cublas|cublasLt|cudnn' || echo "  (Wrapper ran successfully; enable DEVVOICE_DEBUG=1 to see full runtime resolution)"
         echo ""
     fi
 fi
