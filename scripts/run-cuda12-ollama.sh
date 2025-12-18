@@ -8,15 +8,19 @@
 # Environment variables:
 #   DEVVOICE_BINARY - Override binary location
 #   DEVVOICE_DEBUG  - Print library loading info
-#   DEVVOICE_STRICT - Use ONLY Ollama libs (ignore system LD_LIBRARY_PATH)
+#   DEVVOICE_STRICT - Use ONLY Ollama libs (default: 1, set to 0 to append system paths)
+#   DEVVOICE_LIBDIR - Override CUDA library directory (for bundled libs)
 
-# Set library path
-if [ "$DEVVOICE_STRICT" = "1" ]; then
-    # Strict mode: Only Ollama (prevents Python CUDA pollution)
-    export LD_LIBRARY_PATH=/usr/local/lib/ollama
-else
-    # Normal mode: Ollama first, then existing paths
+# Set library path (strict by default to prevent Python CUDA pollution)
+if [ -n "$DEVVOICE_LIBDIR" ]; then
+    # Custom library directory (for future bundled libs)
+    export LD_LIBRARY_PATH="$DEVVOICE_LIBDIR"
+elif [ "${DEVVOICE_STRICT:-1}" = "0" ]; then
+    # Non-strict mode: Append existing paths (opt-in only)
     export LD_LIBRARY_PATH=/usr/local/lib/ollama${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+else
+    # Strict mode (DEFAULT): Only Ollama libs
+    export LD_LIBRARY_PATH=/usr/local/lib/ollama
 fi
 
 # Find dev-voice binary
