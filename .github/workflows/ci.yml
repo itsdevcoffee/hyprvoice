@@ -135,8 +135,12 @@ jobs:
       - name: Build with CUDA
         run: cargo build --release --features cuda
 
+      - name: List release outputs
+        run: ls -la target/release
+
       - name: Verify CUDA artifact
         run: |
+          test -f target/release/dev-voice || (echo "ERROR: target/release/dev-voice not found" && exit 1)
           file target/release/dev-voice
           ldd target/release/dev-voice | grep -E 'libcudart\.so\.12' || (echo "ERROR: CUDA artifact missing cudart.so.12 dependency in ldd" && exit 1)
           readelf -d target/release/dev-voice | grep -E 'NEEDED.*libcudart\.so\.12' || (echo "ERROR: CUDA artifact missing cudart.so.12 in NEEDED section" && exit 1)
