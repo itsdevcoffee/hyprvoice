@@ -64,6 +64,91 @@ Text appears at your cursor!
 
 ---
 
+## Installation
+
+### Download Artifacts
+
+**From GitHub Actions** (most recent builds):
+```bash
+# List recent successful runs
+gh run list --workflow=ci.yml --status=success --limit 5
+
+# Download specific artifact (example)
+gh run download 20323999906 -n dev-voice-linux-x64-cuda
+
+# Or download all variants
+gh run download 20323999906
+```
+
+**From GitHub Releases** (stable versions):
+```bash
+# Coming soon - will be available at:
+# https://github.com/itsdevcoffee/dev-voice/releases
+```
+
+### Install to System
+
+**Linux:**
+```bash
+# Install binary to user bin (already in PATH)
+install -m 755 dev-voice-linux-x64-cuda/dev-voice ~/.local/bin/dev-voice-cuda
+
+# Or CPU version:
+install -m 755 dev-voice-linux-x64/dev-voice ~/.local/bin/dev-voice
+
+# Install CUDA wrapper (optional, for Ollama users)
+install -m 755 scripts/run-cuda12-ollama.sh ~/.local/bin/dev-voice-gpu
+
+# Verify installation
+dev-voice-cuda --version  # or dev-voice-gpu --version
+```
+
+**macOS:**
+```bash
+# Install to user bin
+install -m 755 dev-voice-macos-arm64/dev-voice ~/.local/bin/dev-voice
+
+# Or Metal GPU version:
+install -m 755 dev-voice-macos-15-arm64-metal/dev-voice ~/.local/bin/dev-voice
+
+# Verify
+dev-voice --version
+```
+
+### Verify CUDA Setup (Linux NVIDIA users)
+
+**Check what libraries the binary will use:**
+```bash
+cd dev-voice-linux-x64-cuda
+ldd ./dev-voice | grep -E 'cudart|cublas|cudnn|cuda' || true
+```
+
+**Expected output:**
+```
+libcudart.so.12 => /usr/local/lib/ollama/libcudart.so.12
+libcublas.so.12 => /usr/local/lib/ollama/libcublas.so.12
+libcuda.so.1 => /lib64/libcuda.so.1
+```
+
+If `libcudart.so.12 => not found`, use the wrapper script or set LD_LIBRARY_PATH (see CUDA setup section below).
+
+### Keep Artifacts Organized
+
+**Recommended structure:**
+```
+~/Downloads/dev-voice/           ← Downloaded artifacts
+├── dev-voice-linux-x64/
+├── dev-voice-linux-x64-cuda/
+└── dev-voice-macos-arm64/
+
+~/.local/bin/                     ← Installed binaries (in PATH)
+├── dev-voice                    ← Main binary
+├── dev-voice-cuda               ← CUDA variant (optional)
+└── dev-voice-gpu                ← Wrapper script (optional)
+```
+
+---
+
 ## Platform-Specific Setup
 
 ### Linux
