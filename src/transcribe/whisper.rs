@@ -7,17 +7,22 @@ pub struct Transcriber {
     ctx: WhisperContext,
     draft_ctx: Option<WhisperContext>,
     language: String,
+    prompt: Option<String>,
 }
 
 impl Transcriber {
     /// Create a new transcriber with the given model path
     pub fn new(model_path: &Path) -> Result<Self> {
-        Self::with_language(model_path, None, "en")
+        Self::with_language(model_path, None, "en", None)
     }
 
     /// Create a new transcriber with an optional draft model for speculative decoding
-    pub fn with_draft(model_path: &Path, draft_model_path: Option<&Path>) -> Result<Self> {
-        Self::with_language(model_path, draft_model_path, "en")
+    pub fn with_draft(
+        model_path: &Path,
+        draft_model_path: Option<&Path>,
+        prompt: Option<String>,
+    ) -> Result<Self> {
+        Self::with_language(model_path, draft_model_path, "en", prompt)
     }
 
     /// Create a new transcriber with a specific language and optional draft model
@@ -25,6 +30,7 @@ impl Transcriber {
         model_path: &Path,
         draft_model_path: Option<&Path>,
         language: &str,
+        prompt: Option<String>,
     ) -> Result<Self> {
         let params = WhisperContextParameters::default();
 
@@ -56,6 +62,7 @@ impl Transcriber {
             ctx,
             draft_ctx,
             language: language.to_string(),
+            prompt,
         })
     }
 
@@ -71,10 +78,11 @@ impl Transcriber {
         }
 
         debug!(
-            "Transcribing {} samples ({:.2}s) [Speculative: {}]",
+            "Transcribing {} samples ({:.2}s) [Speculative: {}, Prompt: {}]",
             audio.len(),
             audio.len() as f32 / 16000.0,
-            self.draft_ctx.is_some()
+            self.draft_ctx.is_some(),
+            self.prompt.is_some()
         );
 
         let mut state = self
@@ -87,6 +95,11 @@ impl Transcriber {
         // Enable speculative decoding if draft model is available
         if let Some(ref d_ctx) = self.draft_ctx {
             params.set_encoder_begin_callback(d_ctx);
+        }
+
+        // Apply technical vocabulary prompt if available
+        if let Some(ref prompt) = self.prompt {
+            params.set_initial_prompt(prompt);
         }
 
         // Configure for dictation use case

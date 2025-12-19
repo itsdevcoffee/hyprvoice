@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 const APP_NAME: &str = "dev-voice";
 
+const DEFAULT_PROMPT: &str = "async, await, impl, struct, enum, pub, static, btreemap, hashmap, kubernetes, k8s, docker, container, pod, lifecycle, workflow, ci/cd, yaml, json, rustlang, python, javascript, typescript, bash, git, repo, branch, commit, push, pull, merge, rebase, upstream, downstream, middleware, database, sql, postgres, redis, api, endpoint, graphql, rest, grpc, protobuf, systemd, journalctl, flatpak, wayland, nix, cargo.";
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub model: ModelConfig,
@@ -19,6 +21,8 @@ pub struct ModelConfig {
     pub draft_model_path: Option<PathBuf>,
     /// Language code (e.g., "en")
     pub language: String,
+    /// Optional prompt to bias the model vocabulary (technical terms)
+    pub prompt: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,6 +52,7 @@ impl Default for Config {
                 path: data_dir.join("models/ggml-large-v3-turbo.bin"),
                 draft_model_path: Some(data_dir.join("models/ggml-tiny.en.bin")),
                 language: "en".to_string(),
+                prompt: Some(DEFAULT_PROMPT.to_string()),
             },
             audio: AudioConfig {
                 sample_rate: 16000,

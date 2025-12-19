@@ -84,8 +84,10 @@ impl DaemonServer {
         info!("Loading whisper model into GPU memory...");
         let transcriber = Transcriber::with_draft(
             model_path,
-            config.model.draft_model_path.as_deref()
-        ).context("Failed to load whisper model")?;
+            config.model.draft_model_path.as_deref(),
+            config.model.prompt.clone(),
+        )
+        .context("Failed to load whisper model")?;
         info!("Model loaded and resident in GPU VRAM");
 
         Ok(Self {

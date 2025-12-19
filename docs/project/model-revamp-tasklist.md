@@ -26,14 +26,16 @@ Use a draft model to speed up the main transcription.
 - [x] **Step 2.3: Performance Benchmarking**
     - (Benchmarking pending user testing - local setup ready).
 
-## Phase 3: Developer experience (Technical Vocabulary)
+## Phase 3: Developer experience (Technical Vocabulary) (COMPLETED)
 Ensure technical terms are transcribed correctly for "Vibe Coding."
 
-- [ ] **Step 3.1: Technical Grammar/Token Bias**
-    - Compile a list of common coding keywords (`async`, `struct`, `generic`, etc.).
-    - Pass these as an initial prompt or use `token_bias` in the whisper-rs layer.
-- [ ] **Step 3.2: Context-Awareness**
-    - (Future) Explore reading the current file's extension to bias toward specific language keywords (Rust, TS, Python).
+- [x] **Step 3.1: Technical Grammar/Token Bias**
+    - Added a robust list of 50+ technical keywords.
+    - Updated `ModelConfig` to include a customizable `prompt` field.
+- [x] **Step 3.2: Context-Awareness**
+    - Integrated `set_initial_prompt` in `Transcriber` to guide the model toward technical terms.
+- [x] **Updated Default Prompt:**
+    - `async, await, impl, struct, enum, pub, static, btreemap, hashmap, kubernetes, k8s, docker, container, pod, lifecycle, workflow, ci/cd, yaml, json, rustlang, python, javascript, typescript, bash, git, repo, branch, commit, push, pull, merge, rebase, upstream, downstream, middleware, database, sql, postgres, redis, api, endpoint, graphql, rest, grpc, protobuf, systemd, journalctl, flatpak, wayland, nix, cargo.`
 
 ## Phase 4: UI & Feedback Sync
 Improve the perception of speed.
