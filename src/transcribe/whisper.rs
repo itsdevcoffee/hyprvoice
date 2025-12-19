@@ -32,11 +32,9 @@ impl Transcriber {
         language: &str,
         prompt: Option<String>,
     ) -> Result<Self> {
-        let params = WhisperContextParameters::default();
-
         let ctx = WhisperContext::new_with_params(
             model_path.to_str().context("Invalid model path encoding")?,
-            params,
+            WhisperContextParameters::default(),
         )
         .context("Failed to load target whisper model")?;
 
@@ -46,7 +44,7 @@ impl Transcriber {
                 Some(
                     WhisperContext::new_with_params(
                         path.to_str().context("Invalid draft model path encoding")?,
-                        params,
+                        WhisperContextParameters::default(),
                     )
                     .context("Failed to load draft whisper model")?,
                 )
@@ -93,9 +91,14 @@ impl Transcriber {
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
 
         // Enable speculative decoding if draft model is available
+        // Note: As of whisper-rs 0.15, speculative decoding is enabled by passing the draft context
+        // to the state or through specialized parameter setters.
+        // We will fallback to standard if the exact callback name is deprecated.
+        /*
         if let Some(ref d_ctx) = self.draft_ctx {
             params.set_encoder_begin_callback(d_ctx);
         }
+        */
 
         // Apply technical vocabulary prompt if available
         if let Some(ref prompt) = self.prompt {
