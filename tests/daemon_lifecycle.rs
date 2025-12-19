@@ -43,11 +43,10 @@ fn test_daemon_ping_pong() {
     // Run with: cargo test --test daemon_lifecycle -- --ignored --test-threads=1
 
     // For now, just test that is_daemon_running() works
-    let running = is_daemon_running();
+    let _running = is_daemon_running();
 
     // If daemon is not running, that's expected in test environment
-    // The function should return false without panicking
-    assert!(running == true || running == false);
+    // The function should not panic (which it didn't if we got here)
 }
 
 #[test]
@@ -58,10 +57,9 @@ fn test_daemon_not_running_initially() {
 
     // In a fresh test environment, daemon should not be running
     // (unless user has it running in background)
-    let running = is_daemon_running();
+    let _running = is_daemon_running();
 
-    // This should not panic, regardless of result
-    assert!(running == true || running == false);
+    // This should not panic, regardless of result (which it didn't if we got here)
 }
 
 #[test]

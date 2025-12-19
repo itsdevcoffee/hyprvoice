@@ -2,6 +2,8 @@ use anyhow::{Context, Result};
 #[cfg(not(target_os = "linux"))]
 use arboard::Clipboard;
 use enigo::{Enigo, Keyboard, Settings};
+#[cfg(test)]
+use std::str::FromStr;
 use tracing::info;
 
 /// How to output transcribed text
@@ -14,14 +16,15 @@ pub enum OutputMode {
     Clipboard,
 }
 
-impl OutputMode {
-    /// Parse from string (used in tests)
-    #[cfg(test)]
-    pub fn from_str(s: &str) -> Option<Self> {
+#[cfg(test)]
+impl FromStr for OutputMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "type" | "inject" => Some(Self::Type),
-            "clipboard" | "copy" => Some(Self::Clipboard),
-            _ => None,
+            "type" | "inject" => Ok(Self::Type),
+            "clipboard" | "copy" => Ok(Self::Clipboard),
+            _ => Err(format!("Unknown output mode: {}", s)),
         }
     }
 }
@@ -124,13 +127,13 @@ mod tests {
 
     #[test]
     fn test_output_mode_parsing() {
-        assert_eq!(OutputMode::from_str("type"), Some(OutputMode::Type));
+        assert_eq!(OutputMode::from_str("type"), Ok(OutputMode::Type));
         assert_eq!(
             OutputMode::from_str("clipboard"),
-            Some(OutputMode::Clipboard)
+            Ok(OutputMode::Clipboard)
         );
-        assert_eq!(OutputMode::from_str("copy"), Some(OutputMode::Clipboard));
-        assert_eq!(OutputMode::from_str("invalid"), None);
+        assert_eq!(OutputMode::from_str("copy"), Ok(OutputMode::Clipboard));
+        assert!(OutputMode::from_str("invalid").is_err());
     }
 
     #[test]
