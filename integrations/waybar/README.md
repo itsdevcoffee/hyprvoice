@@ -1,104 +1,135 @@
 # Waybar Integration for dev-voice
 
-Status bar module for Waybar that displays real-time voice dictation status with visual feedback.
+Real-time voice dictation status module for Waybar.
 
 ## Features
-- **Three-state visual feedback**: Idle, Recording, Thinking
-- **Signal-based updates**: Instantaneous UI refresh (no polling)
-- **Timer display**: Shows recording duration
-- **Click actions**: Start/stop recording from Waybar
-- **Animated states**: Pulsing effect for active states
+- Three-state visual feedback (Idle, Recording, Thinking)
+- Signal-based instant updates (no polling lag)
+- Recording timer display
+- Click to start/stop recording
+- Animated pulsing for active states
 
 ## Requirements
-- Waybar (tested on v0.9+)
+- Waybar v0.9+
 - Nerd Fonts (for icons)
 - dev-voice installed
 
-## Installation
+## Quick Install
 
-### Quick Install
 ```bash
 ./integrations/waybar/install.sh
 ```
 
-### Manual Install
-1. Copy files to Waybar config:
-   ```bash
-   mkdir -p ~/.config/waybar/integrations/dev-voice
-   cp integrations/waybar/* ~/.config/waybar/integrations/dev-voice/
-   chmod +x ~/.config/waybar/integrations/dev-voice/dev-voice-status.sh
-   ```
+Then follow the on-screen instructions to add the config snippet.
 
-2. Add to your Waybar config (`~/.config/waybar/config.jsonc`):
-   ```jsonc
-   {
-     "include": ["~/.config/waybar/integrations/dev-voice/module.jsonc"],
-     "modules-left": [..., "custom/dev-voice"]
-   }
-   ```
+## Manual Install
 
-3. (Optional) Import CSS into `~/.config/waybar/style.css`:
-   ```css
-   @import "integrations/dev-voice/style.css";
-   ```
+### Step 1: Install Script
+```bash
+cp integrations/waybar/dev-voice-status.sh ~/.config/waybar/scripts/
+chmod +x ~/.config/waybar/scripts/dev-voice-status.sh
+```
 
-4. Configure dev-voice refresh command:
-   ```bash
-   dev-voice config
-   ```
-   Add to `[output]` section:
-   ```toml
-   refresh_command = "pkill -RTMIN+8 waybar"
-   ```
+### Step 2: Add Module Config
+Add this to your `~/.config/waybar/modules` file or directly in `config.jsonc`:
 
-5. Reload Waybar:
-   ```bash
-   pkill -SIGUSR2 waybar
-   ```
+```jsonc
+"custom/dev-voice": {
+  "format": "{}",
+  "return-type": "json",
+  "exec": "~/.config/waybar/scripts/dev-voice-status.sh",
+  "on-click": "dev-voice start &",
+  "on-click-right": "dev-voice stop &",
+  "signal": 8,
+  "tooltip": true
+}
+```
+
+### Step 3: Add to Module List
+In your `config.jsonc`, add `custom/dev-voice` to a module list:
+```jsonc
+"modules-left": ["...", "custom/dev-voice"],
+```
+
+### Step 4: Add Styles (Optional)
+Add to your `~/.config/waybar/style.css`:
+
+```css
+#custom-dev-voice {
+  padding: 0 10px;
+  margin: 0 4px;
+}
+
+#custom-dev-voice.recording {
+  color: #ff5555;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+#custom-dev-voice.processing {
+  color: #f1fa8c;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+#custom-dev-voice.idle {
+  color: #6272a4;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+```
+
+### Step 5: Configure Refresh Command
+Edit `~/.config/dev-voice/config.toml`:
+```toml
+[output]
+refresh_command = "pkill -RTMIN+8 waybar"
+```
+
+### Step 6: Reload Waybar
+```bash
+pkill -SIGUSR2 waybar
+```
 
 ## States
 
-| State | Icon | Color | Description |
-|-------|------|-------|-------------|
-| Idle | 󰔊 | Gray | Ready to record |
-| Recording | 󰑋 | Red (pulsing) | Active recording with timer |
-| Thinking | 󱐋 | Yellow (pulsing) | Transcribing audio |
+| State | Icon | Color | Trigger |
+|-------|------|-------|---------|
+| Idle | 󰔊 | Gray | No activity |
+| Recording | 󰑋 | Red (pulsing) | `dev-voice start` |
+| Thinking | 󱐋 | Yellow (pulsing) | Processing audio |
 
 ## Customization
 
 ### Change Icons
-Edit `dev-voice-status.sh`:
+Edit `~/.config/waybar/scripts/dev-voice-status.sh`:
 ```bash
-ICON_IDLE="󰔊"      # Your preferred idle icon
-ICON_RECORDING="󰑋" # Your preferred recording icon
-ICON_PROCESSING="󱐋" # Your preferred processing icon
-```
-
-### Change Colors
-Edit `style.css` or add to your main stylesheet:
-```css
-#custom-dev-voice.recording {
-  color: #your-color;
-}
+ICON_IDLE="󰔊"
+ICON_RECORDING="󰑋"
+ICON_PROCESSING="󱐋"
 ```
 
 ### Change Signal Number
-If RTMIN+8 conflicts with other modules, change in both:
-- `module.jsonc`: `"signal": 8` → `"signal": N`
-- dev-voice config: `refresh_command = "pkill -RTMIN+N waybar"`
+If signal 8 conflicts:
+- In module config: `"signal": 8` → `"signal": N`
+- In dev-voice config: `refresh_command = "pkill -RTMIN+N waybar"`
+
+### Change Colors
+Adjust the hex values in `style.css` to match your theme.
 
 ## Troubleshooting
 
-**Icon not updating:**
-- Verify signal number matches in config and module
-- Check script is executable: `chmod +x dev-voice-status.sh`
-- Tail Waybar logs: `journalctl -f --user-unit waybar`
+**Module not appearing:**
+- Verify script path is correct
+- Check `custom/dev-voice` is in a module list
+- Reload: `pkill -SIGUSR2 waybar`
+
+**Icons not updating:**
+- Verify signal number matches in both configs
+- Check script is executable
+- Test manually: `~/.config/waybar/scripts/dev-voice-status.sh`
 
 **Icons showing as boxes:**
-- Install a Nerd Font: `yay -S ttf-nerd-fonts-symbols`
-- Update Waybar font in your theme
-
-**Module not appearing:**
-- Verify include path is correct
-- Check `custom/dev-voice` is in a modules list
-- Reload Waybar: `pkill -SIGUSR2 waybar`
+- Install Nerd Fonts: `yay -S ttf-nerd-fonts-symbols`
+- Or use simple text icons instead

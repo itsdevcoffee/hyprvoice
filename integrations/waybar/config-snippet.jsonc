@@ -1,0 +1,9 @@
+"custom/dev-voice": {
+  "format": "{}",
+  "return-type": "json",
+  "exec": "~/.config/waybar/scripts/dev-voice-status.sh",
+  "on-click": "dev-voice start &",
+  "on-click-right": "dev-voice stop &",
+  "signal": 8,
+  "tooltip": true
+}
