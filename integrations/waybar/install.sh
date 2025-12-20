@@ -34,6 +34,34 @@ chmod +x "$WAYBAR_DIR/scripts/dev-voice-status.sh"
 echo -e "${GREEN}✓ Script installed to $WAYBAR_DIR/scripts/dev-voice-status.sh${NC}"
 echo ""
 
+# Configure dev-voice to refresh Waybar
+echo -e "${YELLOW}Configuring dev-voice refresh command...${NC}"
+DEVVOICE_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/dev-voice/config.toml"
+
+if [ -f "$DEVVOICE_CONFIG" ]; then
+    # Check if refresh_command already exists
+    if grep -q "refresh_command" "$DEVVOICE_CONFIG"; then
+        echo -e "${YELLOW}⚠ refresh_command already configured, skipping${NC}"
+    else
+        # Check if [output] section exists
+        if grep -q "^\[output\]" "$DEVVOICE_CONFIG"; then
+            # Add refresh_command after [output] line
+            sed -i '/^\[output\]/a refresh_command = "pkill -RTMIN+8 waybar"' "$DEVVOICE_CONFIG"
+            echo -e "${GREEN}✓ Added refresh_command to dev-voice config${NC}"
+        else
+            # Append [output] section with refresh_command
+            echo "" >> "$DEVVOICE_CONFIG"
+            echo "[output]" >> "$DEVVOICE_CONFIG"
+            echo 'refresh_command = "pkill -RTMIN+8 waybar"' >> "$DEVVOICE_CONFIG"
+            echo -e "${GREEN}✓ Created [output] section with refresh_command${NC}"
+        fi
+    fi
+else
+    echo -e "${YELLOW}⚠ dev-voice config not found, skipping auto-configuration${NC}"
+    echo "  Run 'dev-voice config --reset' to create it"
+fi
+echo ""
+
 # Show config snippet
 echo -e "${GREEN}=== Installation Complete ===${NC}"
 echo ""
@@ -53,7 +81,5 @@ echo ""
 echo "4. Reload Waybar:"
 echo -e "   ${GREEN}pkill -SIGUSR2 waybar${NC}"
 echo ""
-echo "5. Configure dev-voice to refresh Waybar:"
-echo "   Edit ~/.config/dev-voice/config.toml and add to [output] section:"
-echo -e "   ${GREEN}refresh_command = \"pkill -RTMIN+8 waybar\"${NC}"
+echo "Done! Your Waybar module is ready to use."
 echo ""
