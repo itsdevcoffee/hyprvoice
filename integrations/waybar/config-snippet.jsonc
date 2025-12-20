@@ -5,5 +5,6 @@
   "on-click": "dev-voice start &",
   "on-click-right": "dev-voice stop &",
   "signal": 8,
+  "interval": 1,
   "tooltip": true
 },
