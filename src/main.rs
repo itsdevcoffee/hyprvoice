@@ -67,6 +67,14 @@ enum Commands {
         /// Reset to default configuration
         #[arg(long)]
         reset: bool,
+
+        /// Check config for missing or outdated fields
+        #[arg(long)]
+        check: bool,
+
+        /// Migrate config to latest schema (creates backup)
+        #[arg(long)]
+        migrate: bool,
     },
 
     /// Check system dependencies
@@ -111,8 +119,13 @@ fn main() -> Result<()> {
         Commands::Download { model } => {
             cmd_download(&model)?;
         },
-        Commands::Config { path, reset } => {
-            cmd_config(path, reset)?;
+        Commands::Config {
+            path,
+            reset,
+            check,
+            migrate,
+        } => {
+            cmd_config(path, reset, check, migrate)?;
         },
         Commands::Doctor => {
             cmd_doctor()?;
@@ -379,7 +392,7 @@ fn cmd_download(model_name: &str) -> Result<()> {
     Ok(())
 }
 
-fn cmd_config(show_path: bool, reset: bool) -> Result<()> {
+fn cmd_config(show_path: bool, reset: bool, check: bool, migrate: bool) -> Result<()> {
     if reset {
         let cfg = config::Config::default();
         config::save(&cfg)?;
@@ -393,9 +406,113 @@ fn cmd_config(show_path: bool, reset: bool) -> Result<()> {
         return Ok(());
     }
 
+    if check {
+        return cmd_config_check();
+    }
+
+    if migrate {
+        return cmd_config_migrate();
+    }
+
     let cfg = config::load()?;
     let toml = toml::to_string_pretty(&cfg)?;
     println!("{}", toml);
+
+    Ok(())
+}
+
+/// Check config for missing or outdated fields
+fn cmd_config_check() -> Result<()> {
+    let current = config::load()?;
+    let defaults = config::Config::default();
+
+    println!("Configuration Validation\n");
+
+    // Check model path
+    let model_exists = current.model.path.exists();
+    println!(
+        "{} model.path = {}",
+        if model_exists { "✓" } else { "✗" },
+        current.model.path.display()
+    );
+
+    // Check draft model
+    match &current.model.draft_model_path {
+        Some(path) => {
+            let exists = path.exists();
+            println!(
+                "{} model.draft_model_path = {}",
+                if exists { "✓" } else { "⚠" },
+                path.display()
+            );
+        },
+        None => println!("⚠ model.draft_model_path = (missing, speculative decoding disabled)"),
+    }
+
+    // Check prompt
+    match &current.model.prompt {
+        Some(p) if !p.is_empty() => println!("✓ model.prompt = (set, {} chars)", p.len()),
+        _ => println!("⚠ model.prompt = (missing, using no technical biasing)"),
+    }
+
+    // Check refresh_command
+    match &current.output.refresh_command {
+        Some(cmd) => println!("✓ output.refresh_command = \"{}\"", cmd),
+        None => {
+            if let Some(default_cmd) = &defaults.output.refresh_command {
+                println!("⚠ output.refresh_command = (missing, no UI refresh)");
+                println!("  Suggestion: {}", default_cmd);
+            }
+        },
+    }
+
+    println!("\nRun 'dev-voice config --migrate' to auto-update missing fields.");
+
+    Ok(())
+}
+
+/// Migrate config to latest schema with backup
+fn cmd_config_migrate() -> Result<()> {
+    use std::fs;
+    use std::time::SystemTime;
+
+    let config_path = config::config_path()?;
+    let backup_dir = config_path.parent().unwrap().join("backups");
+    fs::create_dir_all(&backup_dir)?;
+
+    // Create timestamped backup
+    let timestamp = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)?
+        .as_secs();
+    let backup_path = backup_dir.join(format!("config.toml.backup-{}", timestamp));
+
+    println!("Creating backup: {}", backup_path.display());
+    fs::copy(&config_path, &backup_path)?;
+
+    // Load current and defaults
+    let mut current = config::load()?;
+    let defaults = config::Config::default();
+
+    // Merge: Keep user values, add missing fields from defaults
+    if current.model.draft_model_path.is_none() {
+        current.model.draft_model_path = defaults.model.draft_model_path;
+        println!("✓ Added model.draft_model_path");
+    }
+
+    if current.model.prompt.is_none() {
+        current.model.prompt = defaults.model.prompt;
+        println!("✓ Added model.prompt (technical vocabulary)");
+    }
+
+    if current.output.refresh_command.is_none() {
+        current.output.refresh_command = defaults.output.refresh_command;
+        println!("✓ Added output.refresh_command");
+    }
+
+    // Save updated config
+    config::save(&current)?;
+    println!("\nMigration complete! Config updated with new fields.");
+    println!("Backup saved to: {}", backup_path.display());
 
     Ok(())
 }
