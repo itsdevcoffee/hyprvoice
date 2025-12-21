@@ -29,12 +29,14 @@ Implement comprehensive performance benchmarks using Criterion.rs to track perfo
 ### Phase 1: Setup & Infrastructure (~30 min)
 
 - [ ] Add `criterion` to `[dev-dependencies]` in Cargo.toml
+
   ```toml
   [dev-dependencies]
   criterion = { version = "0.5", features = ["html_reports"] }
   ```
 
 - [ ] Add benchmark configurations to Cargo.toml
+
   ```toml
   [[bench]]
   name = "audio_benchmarks"
@@ -46,6 +48,7 @@ Implement comprehensive performance benchmarks using Criterion.rs to track perfo
   ```
 
 - [ ] Create benchmark directory structure
+
   ```
   benches/
   ├── audio_benchmarks.rs
@@ -66,6 +69,7 @@ Implement comprehensive performance benchmarks using Criterion.rs to track perfo
   - Option C: Re-implement test version in benches/
 
 - [ ] Create helper function to generate test audio signals
+
   ```rust
   fn generate_test_audio(duration: f32, sample_rate: u32) -> Vec<f32>
   ```
@@ -178,6 +182,7 @@ Implement comprehensive performance benchmarks using Criterion.rs to track perfo
 ### Phase 7: Advanced Features (Optional, ~1-2 hours)
 
 - [ ] Add flamegraph support
+
   ```toml
   pprof = { version = "0.13", features = ["flamegraph", "criterion"] }
   ```
@@ -358,6 +363,7 @@ fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
 ```
 
 Then run benchmarks with:
+
 ```bash
 cargo bench --features bench
 ```
@@ -412,12 +418,12 @@ benchmark:
     - name: Store benchmark result
       uses: benchmark-action/github-action-benchmark@v1
       with:
-        tool: 'cargo'
+        tool: "cargo"
         output-file-path: output.txt
         github-token: ${{ secrets.GITHUB_TOKEN }}
         auto-push: true
         # Alert if performance degrades by more than 10%
-        alert-threshold: '110%'
+        alert-threshold: "110%"
         comment-on-alert: true
         fail-on-alert: false
 ```
@@ -428,24 +434,24 @@ benchmark:
 
 ### Audio Processing
 
-| Operation | Input | Target | Acceptable Range |
-|-----------|-------|--------|------------------|
-| Resample 44.1→16kHz | 1s | < 5ms | 2-8ms |
-| Resample 44.1→16kHz | 30s | < 100ms | 50-150ms |
-| Resample 48→16kHz | 1s | < 5ms | 2-8ms |
-| Stereo→Mono | 5s @ 48kHz | < 500μs | 100μs-1ms |
-| i16→f32 conversion | 48k samples | < 100μs | 50-200μs |
+| Operation           | Input       | Target  | Acceptable Range |
+| ------------------- | ----------- | ------- | ---------------- |
+| Resample 44.1→16kHz | 1s          | < 5ms   | 2-8ms            |
+| Resample 44.1→16kHz | 30s         | < 100ms | 50-150ms         |
+| Resample 48→16kHz   | 1s          | < 5ms   | 2-8ms            |
+| Stereo→Mono         | 5s @ 48kHz  | < 500μs | 100μs-1ms        |
+| i16→f32 conversion  | 48k samples | < 100μs | 50-200μs         |
 
 **Throughput Target:** At least 100x realtime for resampling (i.e., process 1s of audio in <10ms)
 
 ### Protocol/IPC
 
-| Operation | Target | Acceptable Range |
-|-----------|--------|------------------|
-| Serialize Ping | < 100ns | 50-200ns |
-| Serialize StartRecording | < 200ns | 100-400ns |
-| Deserialize Response | < 500ns | 200ns-1μs |
-| Round-trip encode/decode | < 1μs | 500ns-2μs |
+| Operation                | Target  | Acceptable Range |
+| ------------------------ | ------- | ---------------- |
+| Serialize Ping           | < 100ns | 50-200ns         |
+| Serialize StartRecording | < 200ns | 100-400ns        |
+| Deserialize Response     | < 500ns | 200ns-1μs        |
+| Round-trip encode/decode | < 1μs   | 500ns-2μs        |
 
 **Throughput Target:** > 1M serializations/sec
 
@@ -509,10 +515,12 @@ open target/criterion/report/index.html
 ### In CI
 
 Benchmarks run automatically on:
+
 - Every push to `main` branch
 - PRs with `[bench]` in commit message
 
 Results are stored in the `gh-pages` branch and viewable at:
+
 ```
 https://<username>.github.io/<repo>/dev/bench/
 ```
@@ -534,22 +542,27 @@ https://<username>.github.io/<repo>/dev/bench/
 ## Key Decisions
 
 ### 1. Benchmark Frequency
+
 **Decision:** Run on every push to `main`, optional on PRs
 **Rationale:** Balance between coverage and CI time/cost
 
 ### 2. Performance Targets
+
 **Decision:** Establish baselines first, then set ±15% tolerance
 **Rationale:** Need real-world data before setting targets
 
 ### 3. Whisper Model Benchmarks
+
 **Decision:** Skip for now, add as separate manual benchmark suite
 **Rationale:** Too slow for CI, requires large model files
 
 ### 4. Result Storage
+
 **Decision:** Use gh-pages branch via github-action-benchmark
 **Rationale:** Free, automatic, good visualization, historical tracking
 
 ### 5. Function Exposure
+
 **Decision:** Use feature flag (`bench`) for internal functions
 **Rationale:** Clean separation, doesn't pollute public API
 
