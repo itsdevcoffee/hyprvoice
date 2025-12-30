@@ -1,4 +1,4 @@
-# dev-voice Improvements Task List
+# hyprvoice Improvements Task List
 
 **Status:** Complete
 **Started:** 2025-12-09
@@ -37,12 +37,12 @@
 
 - [x] **File Logging** - Rolling daily logs with tracing_appender
   - Location: `src/main.rs:101-126`
-  - Logs to: `~/.local/state/dev-voice/logs/dev-voice.log`
+  - Logs to: `~/.local/state/hyprvoice/logs/hyprvoice.log`
 
 - [x] **Toggle Mode** - Start/stop recording with same command
   - Location: `src/main.rs:138-209`, `src/state/toggle.rs`
-  - First `dev-voice start` → begins recording
-  - Second `dev-voice start` or `dev-voice stop` → stops and transcribes
+  - First `hyprvoice start` → begins recording
+  - Second `hyprvoice start` or `hyprvoice stop` → stops and transcribes
   - 5 minute timeout if never stopped
 
 - [x] **State Management Module** - Created `src/state/`
@@ -50,7 +50,7 @@
   - `toggle.rs` - PID file and signal handling
 
 - [x] **Stop Command** - Explicit stop command added
-  - `dev-voice stop` sends SIGUSR1 to recording process
+  - `hyprvoice stop` sends SIGUSR1 to recording process
 
 ---
 
@@ -92,18 +92,18 @@ src/output/inject.rs - OutputMode enum, clipboard support, better detection
 
 ```bash
 # Toggle mode (default)
-dev-voice start           # Start recording
-dev-voice start           # Stop and transcribe (same command)
-dev-voice stop            # Explicit stop
+hyprvoice start           # Start recording
+hyprvoice start           # Stop and transcribe (same command)
+hyprvoice stop            # Explicit stop
 
 # Fixed duration (unchanged)
-dev-voice start -d 5      # Record for 5 seconds
+hyprvoice start -d 5      # Record for 5 seconds
 
 # Clipboard mode
-dev-voice start -c        # Output to clipboard
+hyprvoice start -c        # Output to clipboard
 
 # Check logs location
-dev-voice doctor          # Shows log directory
+hyprvoice doctor          # Shows log directory
 ```
 
 ### Test Results

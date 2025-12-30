@@ -1,4 +1,4 @@
-# Rustfmt configuration for dev-voice
+# Rustfmt configuration for hyprvoice
 # See: https://rust-lang.github.io/rustfmt/
 # Note: Only using stable features (unstable features require nightly Rust)
 

@@ -1,6 +1,6 @@
 # Model Revamp & Optimization Roadmap
 
-**Status:** Planning | **Priority:** High | **Goal:** Transition `dev-voice` to a "Bleeding Edge" STT experience.
+**Status:** Planning | **Priority:** High | **Goal:** Transition `hyprvoice` to a "Bleeding Edge" STT experience.
 
 This document serves as the source of truth for the model migration from standard Whisper models to optimized Turbo and Distilled variants, alongside performance optimizations like Speculative Decoding.
 
@@ -12,7 +12,7 @@ The goal was to move from 2023-era Whisper weights to 2024-2025 optimized weight
     - Added `large-v3-turbo` (New recommended High-End).
     - Added `distil-large-v3` (New recommended Mid-Range).
 - [x] **Step 1.3: Update CLI/Installer Logic**
-    - Updated `dev-voice download` default to `large-v3-turbo`.
+    - Updated `hyprvoice download` default to `large-v3-turbo`.
     - Improved help text to reflect new model options.
 
 ## Phase 2: Inference Optimization (Speculative Decoding) (COMPLETED)
@@ -44,7 +44,7 @@ Improve the perception of speed.
     - Implemented `start_processing()` and `cleanup_processing()` triggers.
     - Added `SIGRTMIN+8` signals at every state transition.
 - [x] **Step 4.2: Processing Indicators**
-    - Updated `dev-voice-status.sh` with a dedicated "Thinking..." state.
+    - Updated `hyprvoice-status.sh` with a dedicated "Thinking..." state.
     - Added improved Nerd Font icons for all states.
 
 ## Final Success Metrics

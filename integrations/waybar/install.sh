@@ -1,5 +1,5 @@
 #!/bin/bash
-# Waybar Integration Installer for dev-voice
+# Waybar Integration Installer for hyprvoice
 
 set -e
 
@@ -13,7 +13,7 @@ NC='\033[0m'
 WAYBAR_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/waybar"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo -e "${GREEN}=== dev-voice Waybar Integration Installer ===${NC}"
+echo -e "${GREEN}=== hyprvoice Waybar Integration Installer ===${NC}"
 echo ""
 
 # Check if Waybar config exists
@@ -28,15 +28,15 @@ mkdir -p "$WAYBAR_DIR/scripts"
 
 # Copy script to standard location
 echo -e "${YELLOW}Installing status script...${NC}"
-cp "$SCRIPT_DIR/dev-voice-status.sh" "$WAYBAR_DIR/scripts/"
-chmod +x "$WAYBAR_DIR/scripts/dev-voice-status.sh"
+cp "$SCRIPT_DIR/hyprvoice-status.sh" "$WAYBAR_DIR/scripts/"
+chmod +x "$WAYBAR_DIR/scripts/hyprvoice-status.sh"
 
-echo -e "${GREEN}✓ Script installed to $WAYBAR_DIR/scripts/dev-voice-status.sh${NC}"
+echo -e "${GREEN}✓ Script installed to $WAYBAR_DIR/scripts/hyprvoice-status.sh${NC}"
 echo ""
 
-# Configure dev-voice to refresh Waybar
-echo -e "${YELLOW}Configuring dev-voice refresh command...${NC}"
-DEVVOICE_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/dev-voice/config.toml"
+# Configure hyprvoice to refresh Waybar
+echo -e "${YELLOW}Configuring hyprvoice refresh command...${NC}"
+DEVVOICE_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/hyprvoice/config.toml"
 
 if [ -f "$DEVVOICE_CONFIG" ]; then
     # Check if refresh_command already exists
@@ -47,7 +47,7 @@ if [ -f "$DEVVOICE_CONFIG" ]; then
         if grep -q "^\[output\]" "$DEVVOICE_CONFIG"; then
             # Add refresh_command after [output] line
             sed -i '/^\[output\]/a refresh_command = "pkill -RTMIN+8 waybar"' "$DEVVOICE_CONFIG"
-            echo -e "${GREEN}✓ Added refresh_command to dev-voice config${NC}"
+            echo -e "${GREEN}✓ Added refresh_command to hyprvoice config${NC}"
         else
             # Append [output] section with refresh_command
             echo "" >> "$DEVVOICE_CONFIG"
@@ -57,8 +57,8 @@ if [ -f "$DEVVOICE_CONFIG" ]; then
         fi
     fi
 else
-    echo -e "${YELLOW}⚠ dev-voice config not found, skipping auto-configuration${NC}"
-    echo "  Run 'dev-voice config --reset' to create it"
+    echo -e "${YELLOW}⚠ hyprvoice config not found, skipping auto-configuration${NC}"
+    echo "  Run 'hyprvoice config --reset' to create it"
 fi
 echo ""
 
@@ -71,8 +71,8 @@ echo "1. Add this module to your Waybar config ($WAYBAR_DIR/config.jsonc or modu
 echo ""
 cat "$SCRIPT_DIR/config-snippet.jsonc"
 echo ""
-echo "2. Add 'custom/dev-voice' to one of your module lists:"
-echo -e "   ${GREEN}\"modules-left\": [..., \"custom/dev-voice\"]${NC}"
+echo "2. Add 'custom/hyprvoice' to one of your module lists:"
+echo -e "   ${GREEN}\"modules-left\": [..., \"custom/hyprvoice\"]${NC}"
 echo ""
 echo "3. (Optional) Add these styles to your style.css:"
 echo ""

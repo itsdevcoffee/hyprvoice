@@ -1,4 +1,4 @@
-//! Command implementations for dev-voice CLI
+//! Command implementations for hyprvoice CLI
 //!
 //! This module contains all subcommand implementations organized by functionality.
 

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to dev-voice will be documented in this file.
+All notable changes to hyprvoice will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Cross-platform support:** macOS, Windows, and X11 in addition to Wayland
-- **Clipboard mode flag:** `dev-voice start -c` to copy text to clipboard instead of typing
+- **Clipboard mode flag:** `hyprvoice start -c` to copy text to clipboard instead of typing
 - **Native HTTP downloads:** Replaced `curl` subprocess with `ureq` library for model downloads
 - **Checksum verification:** SHA256 verification for downloaded Whisper models
 - **Better resampling:** Migrated from linear interpolation to `rubato` library
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** Type mode no longer preserves clipboard contents
   - Previous versions used paste shortcuts (Ctrl+V) which required saving/restoring clipboard
   - Current version types text directly at cursor using `enigo.text()` - more reliable but doesn't interact with clipboard
-  - Migration: Use `dev-voice start -c` for clipboard-based workflow
+  - Migration: Use `hyprvoice start -c` for clipboard-based workflow
 - **BREAKING:** Migrated from Linux-only tools (wtype/xdotool) to cross-platform enigo library
 - **BREAKING:** Audio capture migrated from PipeWire to CPAL (cross-platform)
 - Simplified output module from 330+ lines to ~120 lines (-63% code reduction)

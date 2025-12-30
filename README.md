@@ -1,4 +1,4 @@
-# dev-voice
+# hyprvoice
 
 **Voice-to-text dictation for developers.** Speak naturally, get accurate transcription, text appears at your cursor.
 
@@ -22,15 +22,15 @@ Fast, local, private. Works on Linux, macOS, and Windows. Powered by OpenAI Whis
 
 ### 1. Download Pre-Built Binary
 
-Choose your platform from the [latest release](https://github.com/itsdevcoffee/dev-voice/releases):
+Choose your platform from the [latest release](https://github.com/itsdevcoffee/hyprvoice/releases):
 
 | Platform | Download | GPU Support | Requirements |
 |----------|----------|-------------|--------------|
-| **Linux (CPU)** | `dev-voice-linux-x64` | None | Works everywhere |
-| **Linux (NVIDIA)** | `dev-voice-linux-x64-cuda` | CUDA | NVIDIA GPU + CUDA 12.x runtime |
-| **macOS (M1/M2/M3/M4)** | `dev-voice-macos-arm64` | None | macOS 13+ |
-| **macOS (M1+ GPU)** | `dev-voice-macos-15-arm64-metal` | Metal | macOS 15+ on Apple Silicon |
-| **macOS (Intel)** | `dev-voice-macos-intel` | None | macOS 13-26, Intel Macs |
+| **Linux (CPU)** | `hyprvoice-linux-x64` | None | Works everywhere |
+| **Linux (NVIDIA)** | `hyprvoice-linux-x64-cuda` | CUDA | NVIDIA GPU + CUDA 12.x runtime |
+| **macOS (M1/M2/M3/M4)** | `hyprvoice-macos-arm64` | None | macOS 13+ |
+| **macOS (M1+ GPU)** | `hyprvoice-macos-15-arm64-metal` | Metal | macOS 15+ on Apple Silicon |
+| **macOS (Intel)** | `hyprvoice-macos-intel` | None | macOS 13-26, Intel Macs |
 
 **Alternatively**, download from GitHub Actions artifacts:
 ```bash
@@ -39,25 +39,25 @@ gh run download <run-id> -n <artifact-name>
 
 ### 2. Make Executable
 ```bash
-chmod +x dev-voice
+chmod +x hyprvoice
 ```
 
 ### 3. Download a Model
 ```bash
-./dev-voice download base.en
+./hyprvoice download base.en
 ```
 
 ### 4. Start Daemon
 ```bash
-./dev-voice daemon
+./hyprvoice daemon
 ```
 
 ### 5. Use It
 ```bash
 # In another terminal:
-./dev-voice start    # Start recording
+./hyprvoice start    # Start recording
 # Speak...
-./dev-voice stop     # Stop and transcribe
+./hyprvoice stop     # Stop and transcribe
 ```
 
 Text appears at your cursor!
@@ -74,7 +74,7 @@ Text appears at your cursor!
 gh run list --workflow=ci.yml --status=success --limit 5
 
 # Download specific artifact (example)
-gh run download 20323999906 -n dev-voice-linux-x64-cuda
+gh run download 20323999906 -n hyprvoice-linux-x64-cuda
 
 # Or download all variants
 gh run download 20323999906
@@ -83,7 +83,7 @@ gh run download 20323999906
 **From GitHub Releases** (stable versions):
 ```bash
 # Coming soon - will be available at:
-# https://github.com/itsdevcoffee/dev-voice/releases
+# https://github.com/itsdevcoffee/hyprvoice/releases
 ```
 
 ### Install to System
@@ -91,36 +91,36 @@ gh run download 20323999906
 **Linux:**
 ```bash
 # Install binary to user bin (already in PATH)
-install -m 755 dev-voice-linux-x64-cuda/dev-voice ~/.local/bin/dev-voice-cuda
+install -m 755 hyprvoice-linux-x64-cuda/hyprvoice ~/.local/bin/hyprvoice-cuda
 
 # Or CPU version:
-install -m 755 dev-voice-linux-x64/dev-voice ~/.local/bin/dev-voice
+install -m 755 hyprvoice-linux-x64/hyprvoice ~/.local/bin/hyprvoice
 
 # Install CUDA wrapper (optional, for Ollama users)
-install -m 755 scripts/run-cuda12-ollama.sh ~/.local/bin/dev-voice-gpu
+install -m 755 scripts/run-cuda12-ollama.sh ~/.local/bin/hyprvoice-gpu
 
 # Verify installation
-dev-voice-cuda --version  # or dev-voice-gpu --version
+hyprvoice-cuda --version  # or hyprvoice-gpu --version
 ```
 
 **macOS:**
 ```bash
 # Install to user bin
-install -m 755 dev-voice-macos-arm64/dev-voice ~/.local/bin/dev-voice
+install -m 755 hyprvoice-macos-arm64/hyprvoice ~/.local/bin/hyprvoice
 
 # Or Metal GPU version:
-install -m 755 dev-voice-macos-15-arm64-metal/dev-voice ~/.local/bin/dev-voice
+install -m 755 hyprvoice-macos-15-arm64-metal/hyprvoice ~/.local/bin/hyprvoice
 
 # Verify
-dev-voice --version
+hyprvoice --version
 ```
 
 ### Verify CUDA Setup (Linux NVIDIA users)
 
 **Check what libraries the binary will use:**
 ```bash
-cd dev-voice-linux-x64-cuda
-ldd ./dev-voice | grep -E 'cudart|cublas|cudnn|cuda' || true
+cd hyprvoice-linux-x64-cuda
+ldd ./hyprvoice | grep -E 'cudart|cublas|cudnn|cuda' || true
 ```
 
 **Expected output:**
@@ -136,15 +136,15 @@ If `libcudart.so.12 => not found`, use the wrapper script or set LD_LIBRARY_PATH
 
 **Recommended structure:**
 ```
-~/Downloads/dev-voice/           ← Downloaded artifacts
-├── dev-voice-linux-x64/
-├── dev-voice-linux-x64-cuda/
-└── dev-voice-macos-arm64/
+~/Downloads/hyprvoice/           ← Downloaded artifacts
+├── hyprvoice-linux-x64/
+├── hyprvoice-linux-x64-cuda/
+└── hyprvoice-macos-arm64/
 
 ~/.local/bin/                     ← Installed binaries (in PATH)
-├── dev-voice                    ← Main binary
-├── dev-voice-cuda               ← CUDA variant (optional)
-└── dev-voice-gpu                ← Wrapper script (optional)
+├── hyprvoice                    ← Main binary
+├── hyprvoice-cuda               ← CUDA variant (optional)
+└── hyprvoice-gpu                ← Wrapper script (optional)
 ```
 
 ---
@@ -184,7 +184,7 @@ sudo apt install xclip    # Ubuntu
 
 #### **CUDA (NVIDIA GPUs)**
 
-**Download:** `dev-voice-linux-x64-cuda`
+**Download:** `hyprvoice-linux-x64-cuda`
 
 **Requirements:**
 - NVIDIA GPU (GTX 10xx series or newer)
@@ -203,7 +203,7 @@ ls /usr/local/lib/ollama/libcudart.so* 2>/dev/null
 
 **Verify what the binary will load:**
 ```bash
-ldd ./dev-voice | grep -E 'cudart|cublas|cudnn|cuda' || true
+ldd ./hyprvoice | grep -E 'cudart|cublas|cudnn|cuda' || true
 ```
 
 **Solution 1: Use wrapper script** (Recommended)
@@ -215,17 +215,17 @@ ldd ./dev-voice | grep -E 'cudart|cublas|cudnn|cuda' || true
 **Solution 2: Set library path per-run**
 ```bash
 # With Ollama's CUDA 12:
-LD_LIBRARY_PATH=/usr/local/lib/ollama:$LD_LIBRARY_PATH ./dev-voice daemon
+LD_LIBRARY_PATH=/usr/local/lib/ollama:$LD_LIBRARY_PATH ./hyprvoice daemon
 
 # Or with system CUDA 12 (if installed):
-LD_LIBRARY_PATH=/usr/local/cuda-12/lib64:$LD_LIBRARY_PATH ./dev-voice daemon
+LD_LIBRARY_PATH=/usr/local/cuda-12/lib64:$LD_LIBRARY_PATH ./hyprvoice daemon
 ```
 
 **Solution 3: Build from source against your CUDA version**
 ```bash
 # If you have CUDA 13+ and want to use it:
 cargo build --release --features cuda
-./target/release/dev-voice daemon
+./target/release/hyprvoice daemon
 ```
 
 **⚠️ Unsupported:** Symlinking CUDA 13 → 12 (`libcudart.so.13` → `libcudart.so.12`) may work but can cause subtle issues. Not recommended.
@@ -239,8 +239,8 @@ cargo build --release --features cuda
 #### **Apple Silicon (M1/M2/M3/M4)**
 
 **Download:**
-- `dev-voice-macos-arm64` (CPU-only, universal)
-- `dev-voice-macos-15-arm64-metal` (GPU acceleration, macOS 15+)
+- `hyprvoice-macos-arm64` (CPU-only, universal)
+- `hyprvoice-macos-15-arm64-metal` (GPU acceleration, macOS 15+)
 
 **Permissions:** On first run, macOS will ask for microphone and accessibility permissions:
 1. **Microphone** - Required for audio capture
@@ -256,7 +256,7 @@ Grant both in System Settings → Privacy & Security.
 
 #### **Intel Macs**
 
-**Download:** `dev-voice-macos-intel`
+**Download:** `hyprvoice-macos-intel`
 
 **Supported versions:** macOS 13 (Ventura) through macOS 26 (Tahoe)
 
@@ -283,7 +283,7 @@ cargo build --release
 
 **Hardware:** GTX 10xx series or newer
 **Software:** CUDA Toolkit 12.x
-**Binary:** `dev-voice-linux-x64-cuda`
+**Binary:** `hyprvoice-linux-x64-cuda`
 **Speedup:** 5-10x faster than CPU
 
 **Install CUDA:**
@@ -299,7 +299,7 @@ nvidia-smi
 
 **Hardware:** M1, M2, M3, M4 (any Mac with Apple Silicon)
 **Software:** macOS 15+ recommended (works on 13-14)
-**Binary:** `dev-voice-macos-15-arm64-metal`
+**Binary:** `hyprvoice-macos-15-arm64-metal`
 **Speedup:** 2-3x faster than CPU
 
 **No installation needed** - Metal is built into macOS.
@@ -345,8 +345,8 @@ brew install cmake
 
 ```bash
 # Clone repository
-git clone https://github.com/itsdevcoffee/dev-voice.git
-cd dev-voice
+git clone https://github.com/itsdevcoffee/hyprvoice.git
+cd hyprvoice
 
 # CPU-only (default, works everywhere)
 cargo build --release
@@ -358,7 +358,7 @@ cargo build --release --features rocm    # AMD
 cargo build --release --features vulkan  # Cross-platform Vulkan
 
 # Binary output
-./target/release/dev-voice
+./target/release/hyprvoice
 ```
 
 ---
@@ -369,21 +369,21 @@ cargo build --release --features vulkan  # Cross-platform Vulkan
 
 **Start background service:**
 ```bash
-dev-voice daemon
+hyprvoice daemon
 ```
 
 **In another terminal:**
 ```bash
-dev-voice start      # Begin recording
+hyprvoice start      # Begin recording
 # Speak your text...
-dev-voice stop       # Transcribe and inject
+hyprvoice stop       # Transcribe and inject
 ```
 
 ### One-Shot Mode
 
 **Record for fixed duration:**
 ```bash
-dev-voice once --duration 10    # Record 10 seconds, then transcribe
+hyprvoice once --duration 10    # Record 10 seconds, then transcribe
 ```
 
 ### Download Models
@@ -391,13 +391,13 @@ dev-voice once --duration 10    # Record 10 seconds, then transcribe
 **First time setup:**
 ```bash
 # Tiny (fast, less accurate, 75MB)
-dev-voice download tiny.en
+hyprvoice download tiny.en
 
 # Base (balanced, 148MB) - Recommended
-dev-voice download base.en
+hyprvoice download base.en
 
 # Small (more accurate, 488MB)
-dev-voice download small.en
+hyprvoice download small.en
 ```
 
 **Available models:** `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`
@@ -406,11 +406,11 @@ dev-voice download small.en
 
 ## Configuration
 
-**Config file:** `~/.config/dev-voice/config.toml` (auto-created)
+**Config file:** `~/.config/hyprvoice/config.toml` (auto-created)
 
 ```toml
 [model]
-path = "~/.local/share/dev-voice/models/ggml-base.en.bin"
+path = "~/.local/share/hyprvoice/models/ggml-base.en.bin"
 language = "en"
 
 [audio]
@@ -431,8 +431,8 @@ append_space = true
 
 Add to `~/.config/hypr/hyprland.conf`:
 ```ini
-bind = SUPER, V, exec, dev-voice start --duration 10
-bind = SUPER SHIFT, V, exec, dev-voice start -c  # Clipboard mode
+bind = SUPER, V, exec, hyprvoice start --duration 10
+bind = SUPER SHIFT, V, exec, hyprvoice start -c  # Clipboard mode
 ```
 
 ### macOS
@@ -476,7 +476,7 @@ See the CUDA setup section above for solutions. The CUDA binary requires CUDA 12
 
 **Verify what libraries are being loaded:**
 ```bash
-ldd ./dev-voice | grep -E 'cudart|cublas|cudnn|cuda' || true
+ldd ./hyprvoice | grep -E 'cudart|cublas|cudnn|cuda' || true
 ```
 
 **Verify GPU is being used:**
@@ -493,13 +493,13 @@ sudo dnf install patchelf  # Fedora
 sudo apt install patchelf  # Ubuntu
 
 # Set RUNPATH to Ollama's libs (machine-specific, not portable)
-patchelf --set-runpath /usr/local/lib/ollama ./dev-voice
+patchelf --set-runpath /usr/local/lib/ollama ./hyprvoice
 
 # Verify it worked:
-readelf -d ./dev-voice | grep -E 'RPATH|RUNPATH' || true
+readelf -d ./hyprvoice | grep -E 'RPATH|RUNPATH' || true
 
 # Now binary finds libs automatically:
-./dev-voice daemon
+./hyprvoice daemon
 ```
 
 **Note:** RUNPATH bakes a path into the binary. Only do this for local installs, not for distributing binaries.
@@ -531,7 +531,7 @@ readelf -d ./dev-voice | grep -E 'RPATH|RUNPATH' || true
 
 ```
 ┌─────────────┐
-│ dev-voice   │  CLI commands (start, stop, daemon, download)
+│ hyprvoice   │  CLI commands (start, stop, daemon, download)
 │   (client)  │
 └──────┬──────┘
        │ Unix socket
@@ -565,7 +565,7 @@ readelf -d ./dev-voice | grep -E 'RPATH|RUNPATH' || true
 **Requires:** `wl-clipboard` (Wayland) or `xclip` (X11)
 
 ```bash
-dev-voice start -c --duration 10
+hyprvoice start -c --duration 10
 ```
 
 Text goes to clipboard instead of typing directly. Useful for:
@@ -577,25 +577,25 @@ Text goes to clipboard instead of typing directly. Useful for:
 
 ```bash
 # Verbose logging
-RUST_LOG=debug dev-voice daemon
+RUST_LOG=debug hyprvoice daemon
 
 # Override model path
-MODEL_PATH=~/custom/model.bin dev-voice start
+MODEL_PATH=~/custom/model.bin hyprvoice start
 
 # CUDA library path
-LD_LIBRARY_PATH=/custom/cuda/lib64:$LD_LIBRARY_PATH dev-voice daemon
+LD_LIBRARY_PATH=/custom/cuda/lib64:$LD_LIBRARY_PATH hyprvoice daemon
 ```
 
 ### Systemd Service (Linux)
 
-Create `~/.config/systemd/user/dev-voice.service`:
+Create `~/.config/systemd/user/hyprvoice.service`:
 ```ini
 [Unit]
-Description=dev-voice daemon
+Description=hyprvoice daemon
 After=default.target
 
 [Service]
-ExecStart=%h/.local/bin/dev-voice daemon
+ExecStart=%h/.local/bin/hyprvoice daemon
 Restart=on-failure
 Environment="RUST_LOG=info"
 
@@ -605,7 +605,7 @@ WantedBy=default.target
 
 Enable:
 ```bash
-systemctl --user enable --now dev-voice
+systemctl --user enable --now hyprvoice
 ```
 
 ---
@@ -695,7 +695,7 @@ See `.github/workflows/ci.yml` for details.
 A: Text injection requires accessibility access to send keyboard events to other applications.
 
 **Q: Does this work offline?**
-A: Yes! 100% local. Models stored at `~/.local/share/dev-voice/models/`.
+A: Yes! 100% local. Models stored at `~/.local/share/hyprvoice/models/`.
 
 **Q: Which model should I use?**
 A: Start with `base.en` (148MB) - good balance of speed and accuracy. Upgrade to `small.en` if you need better accuracy.

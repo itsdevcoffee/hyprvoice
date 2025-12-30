@@ -5,8 +5,8 @@
 //! These tests use serial_test to run sequentially because they share
 //! the same Unix socket path.
 
-use dev_voice::daemon::protocol::DaemonRequest;
-use dev_voice::daemon::{is_daemon_running, send_request};
+use hyprvoice::daemon::protocol::DaemonRequest;
+use hyprvoice::daemon::{is_daemon_running, send_request};
 use serial_test::serial;
 use std::thread;
 use std::time::Duration;

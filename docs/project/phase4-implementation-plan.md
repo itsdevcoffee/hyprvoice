@@ -83,7 +83,7 @@ let stream = device.build_input_stream(
 stream.play()?;
 ```
 
-**Compatibility with dev-voice:**
+**Compatibility with hyprvoice:**
 - ✅ Supports 16kHz mono f32 (Whisper requirement)
 - ✅ Callback-based (works with toggle mode signal handling)
 - ✅ Supports stop/start (can implement duration and toggle modes)
@@ -155,7 +155,7 @@ clipboard.set_text(&saved)?;
 - Both prove Whisper + auto-paste works across platforms
 - Our advantage: Pure Rust, daemon mode, no web UI overhead
 
-**Key Insight:** No pure Rust CLI tool exists with this approach - dev-voice will be unique!
+**Key Insight:** No pure Rust CLI tool exists with this approach - hyprvoice will be unique!
 
 ---
 
@@ -201,13 +201,13 @@ src/
 
 ```toml
 [package]
-name = "dev-voice"
+name = "hyprvoice"
 version = "0.2.0"  # Bump for breaking dependency changes
 edition = "2024"
 rust-version = "1.85"
 description = "Cross-platform voice dictation for developers"
 license = "MIT"
-repository = "https://github.com/itsdevcoffee/dev-voice"
+repository = "https://github.com/itsdevcoffee/hyprvoice"
 
 [dependencies]
 # Speech recognition
@@ -335,9 +335,9 @@ cargo install --path . --features metal
 cargo build --release --features metal --target x86_64-apple-darwin
 cargo build --release --features metal --target aarch64-apple-darwin
 lipo -create \
-  target/x86_64-apple-darwin/release/dev-voice \
-  target/aarch64-apple-darwin/release/dev-voice \
-  -output dev-voice-universal
+  target/x86_64-apple-darwin/release/hyprvoice \
+  target/aarch64-apple-darwin/release/hyprvoice \
+  -output hyprvoice-universal
 ```
 
 #### **Windows (Future)**
@@ -548,7 +548,7 @@ mod tests {
 **Validation:**
 ```bash
 cargo build --release
-./target/release/dev-voice start -d 5
+./target/release/hyprvoice start -d 5
 # Should record 5 seconds and transcribe
 ```
 
@@ -821,8 +821,8 @@ arboard = "3.6"
 **Validation:**
 ```bash
 # Both platforms
-dev-voice start -d 3   # Record 3s, should paste at cursor
-dev-voice start -c     # Should copy to clipboard only
+hyprvoice start -d 3   # Record 3s, should paste at cursor
+hyprvoice start -c     # Should copy to clipboard only
 ```
 
 ---
@@ -863,7 +863,7 @@ arboard = "3.6"
 #### Day 2: Fix Terminal Detection Edge Cases (2 hours)
 
 **Enhancements:**
-- Make terminal list configurable in `~/.config/dev-voice/config.toml`
+- Make terminal list configurable in `~/.config/hyprvoice/config.toml`
 - Add fallback when detection fails (use normal paste)
 - Add logging for which shortcut was used
 
@@ -914,7 +914,7 @@ strategy:
 1. Open System Preferences
 2. Security & Privacy → Privacy → Accessibility
 3. Click lock icon, enter password
-4. Add `dev-voice` binary to list
+4. Add `hyprvoice` binary to list
 5. Check the checkbox
 
 **Permission Check in Code:**
@@ -931,22 +931,22 @@ fn check_accessibility() -> Result<()> {
 
 ```bash
 # Via Homebrew (future)
-brew install dev-voice
+brew install hyprvoice
 
 # Via Cargo
-cargo install dev-voice --features metal
+cargo install hyprvoice --features metal
 
 # From source
-git clone https://github.com/itsdevcoffee/dev-voice
-cd dev-voice
+git clone https://github.com/itsdevcoffee/hyprvoice
+cd hyprvoice
 cargo build --release --features metal
 ```
 
 **First Run:**
-1. Run `dev-voice doctor` to check setup
+1. Run `hyprvoice doctor` to check setup
 2. Grant microphone permission (system prompt)
 3. Enable Accessibility (follow error message instructions)
-4. Run `dev-voice start -d 3` to test
+4. Run `hyprvoice start -d 3` to test
 
 ---
 
@@ -967,7 +967,7 @@ cargo build --release --features metal
 
 **User Impact:**
 - Linux users: No longer need wtype/xdotool installed!
-- macOS users: Can now use dev-voice!
+- macOS users: Can now use hyprvoice!
 - Windows users (future): Will be supported!
 
 **Version Bump:** 0.1.0 → 0.2.0 (minor version for dependency changes)
@@ -976,10 +976,10 @@ cargo build --release --features metal
 
 **CLI Interface:** 100% unchanged
 ```bash
-dev-voice start           # Still works
-dev-voice start -d 5      # Still works
-dev-voice start -c        # Still works
-dev-voice stop            # Still works
+hyprvoice start           # Still works
+hyprvoice start -d 5      # Still works
+hyprvoice start -c        # Still works
+hyprvoice stop            # Still works
 ```
 
 **Config File:** 100% unchanged
@@ -1069,7 +1069,7 @@ const TERMINALS: &[&str] = &[
 ### 9.2 Configuration Override
 
 ```toml
-# ~/.config/dev-voice/config.toml
+# ~/.config/hyprvoice/config.toml
 [terminal]
 # Add custom terminals
 additional_terminals = ["my-terminal", "custom-term"]

@@ -121,7 +121,7 @@ Test compilation with different GPU backends:
 ### 4. Release Artifact Strategy (DEFERRED)
 
 **Question:** Should we build release binaries for all platforms in CI?
-- Separate artifacts: `dev-voice-linux-x64`, `dev-voice-macos-arm64`, etc.?
+- Separate artifacts: `hyprvoice-linux-x64`, `hyprvoice-macos-arm64`, etc.?
 - Or just verify builds work, manual release later?
 
 **Decision:** Defer to v0.2.0 release preparation
@@ -174,7 +174,7 @@ Test compilation with different GPU backends:
 
 - **Implementation Summary:** `docs/project/phase4-implementation-summary.md`
 - **Code Review:** `.claude/plans/luminous-dreaming-hamster.md`
-- **PR:** https://github.com/itsdevcoffee/dev-voice/pull/1
+- **PR:** https://github.com/itsdevcoffee/hyprvoice/pull/1
 - **Current CI:** `.github/workflows/ci.yml`
 - **Hyprland Config:** `~/.config/hypr/UserConfigs/UserKeybinds.conf` (lines 43-46)
 

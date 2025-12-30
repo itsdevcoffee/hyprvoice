@@ -2,7 +2,7 @@
 //!
 //! Tests request/response serialization, error handling, and protocol contracts.
 
-use dev_voice::daemon::protocol::{DaemonRequest, DaemonResponse};
+use hyprvoice::daemon::protocol::{DaemonRequest, DaemonResponse};
 
 #[test]
 fn test_request_ping_serialization() {

@@ -1,6 +1,6 @@
 # Desktop Environment Integrations
 
-Status bar and system tray integrations for dev-voice across different desktop environments.
+Status bar and system tray integrations for hyprvoice across different desktop environments.
 
 ## Available Integrations
 
@@ -29,11 +29,11 @@ Coming soon - Minimal integration for i3status users.
 All integrations follow a common pattern:
 
 1. **State Files** (Generic):
-   - `~/.local/state/dev-voice/recording.pid` - Recording state
-   - `~/.local/state/dev-voice/processing` - Transcription state
+   - `~/.local/state/hyprvoice/recording.pid` - Recording state
+   - `~/.local/state/hyprvoice/processing` - Transcription state
 
 2. **Refresh Mechanism** (Configurable):
-   - Set via `output.refresh_command` in dev-voice config
+   - Set via `output.refresh_command` in hyprvoice config
    - Each integration documents its specific command
 
 3. **Module Files** (Integration-specific):

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# dev-voice-status.sh - Waybar custom module for voice dictation status
+# hyprvoice-status.sh - Waybar custom module for voice dictation status
 
-STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dev-voice"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/hyprvoice"
 PID_FILE="${STATE_DIR}/recording.pid"
 PROCESSING_FILE="${STATE_DIR}/processing"
 

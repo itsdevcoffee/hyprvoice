@@ -1,21 +1,21 @@
-/* dev-voice Waybar Module Styling */
+/* hyprvoice Waybar Module Styling */
 
-#custom-dev-voice {
+#custom-hyprvoice {
   padding: 0 10px;
   margin: 0 4px;
 }
 
-#custom-dev-voice.recording {
+#custom-hyprvoice.recording {
   color: #ff5555;
   animation: pulse 0.75s ease-in-out infinite alternate;
 }
 
-#custom-dev-voice.processing {
+#custom-hyprvoice.processing {
   color: #f1fa8c;
   animation: pulse 0.25s ease-in-out infinite alternate;
 }
 
-#custom-dev-voice.idle {
+#custom-hyprvoice.idle {
   color: #6272a4;
   animation: none;
 }

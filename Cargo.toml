@@ -1,11 +1,11 @@
 [package]
-name = "dev-voice"
+name = "hyprvoice"
 version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Voice dictation for Linux developers"
 license = "MIT"
-repository = "https://github.com/itsdevcoffee/dev-voice"
+repository = "https://github.com/itsdevcoffee/hyprvoice"
 
 [dependencies]
 # Speech recognition

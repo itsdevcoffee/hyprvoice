@@ -1,9 +1,9 @@
-"custom/dev-voice": {
+"custom/hyprvoice": {
   "format": "{}",
   "return-type": "json",
-  "exec": "~/.config/waybar/scripts/dev-voice-status.sh",
-  "on-click": "dev-voice start &",
-  "on-click-right": "dev-voice stop &",
+  "exec": "~/.config/waybar/scripts/hyprvoice-status.sh",
+  "on-click": "hyprvoice start &",
+  "on-click-right": "hyprvoice stop &",
   "signal": 8,
   "interval": 1,
   "tooltip": true

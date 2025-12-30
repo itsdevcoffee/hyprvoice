@@ -21,7 +21,7 @@ use transcribe::Transcriber;
 const TOGGLE_MODE_TIMEOUT_SECS: u32 = 300;
 
 #[derive(Parser)]
-#[command(name = "dev-voice")]
+#[command(name = "hyprvoice")]
 #[command(about = "Voice dictation for Linux developers")]
 #[command(version)]
 struct Cli {
@@ -149,7 +149,7 @@ fn init_logging(verbose: bool) -> Result<()> {
 
     // Set up file logging
     let log_dir = state::get_log_dir()?;
-    let file_appender = RollingFileAppender::new(Rotation::DAILY, log_dir, "dev-voice.log");
+    let file_appender = RollingFileAppender::new(Rotation::DAILY, log_dir, "hyprvoice.log");
 
     // Create layers
     let file_layer = tracing_subscriber::fmt::layer()
@@ -193,7 +193,7 @@ fn cmd_start_toggle(model_override: Option<String>, clipboard: bool) -> Result<(
 
     if !cfg.model.path.exists() {
         anyhow::bail!(
-            "Model not found: {}\nRun: dev-voice download {}",
+            "Model not found: {}\nRun: hyprvoice download {}",
             cfg.model.path.display(),
             cfg.model
                 .path
@@ -211,7 +211,7 @@ fn cmd_start_toggle(model_override: Option<String>, clipboard: bool) -> Result<(
 
         // Check if daemon is running
         if !daemon::is_daemon_running() {
-            anyhow::bail!("Daemon is not running. Start it first with: dev-voice daemon &");
+            anyhow::bail!("Daemon is not running. Start it first with: hyprvoice daemon &");
         }
 
         // Create processing state file for UI feedback
@@ -266,11 +266,11 @@ fn cmd_start_toggle(model_override: Option<String>, clipboard: bool) -> Result<(
             "Starting recording via daemon (max {} seconds)",
             TOGGLE_MODE_TIMEOUT_SECS
         );
-        println!("Recording started. Run 'dev-voice start' again or 'dev-voice stop' to finish.");
+        println!("Recording started. Run 'hyprvoice start' again or 'hyprvoice stop' to finish.");
 
         // Check if daemon is running
         if !daemon::is_daemon_running() {
-            anyhow::bail!("Daemon is not running. Start it first with: dev-voice daemon &");
+            anyhow::bail!("Daemon is not running. Start it first with: hyprvoice daemon &");
         }
 
         // Send start request
@@ -307,7 +307,7 @@ fn cmd_start_fixed(model_override: Option<String>, duration: u32, clipboard: boo
 
     if !cfg.model.path.exists() {
         anyhow::bail!(
-            "Model not found: {}\nRun: dev-voice download {}",
+            "Model not found: {}\nRun: hyprvoice download {}",
             cfg.model.path.display(),
             cfg.model
                 .path
@@ -498,7 +498,7 @@ fn cmd_config_check() -> Result<()> {
 
     // Show appropriate message based on validation results
     if has_warnings {
-        println!("\nRun 'dev-voice config --migrate' to auto-update missing fields.");
+        println!("\nRun 'hyprvoice config --migrate' to auto-update missing fields.");
     } else {
         println!("\n✓ Your config is valid and up to date.");
     }
@@ -562,7 +562,7 @@ fn send_notification(title: &str, body: &str, urgency: &str) {
     let _ = std::process::Command::new("notify-send")
         .args([
             "-a",
-            "dev-voice",
+            "hyprvoice",
             "-i",
             "audio-input-microphone",
             "-u",
@@ -582,7 +582,7 @@ fn cmd_daemon(model_override: Option<String>) -> Result<()> {
 
     if !cfg.model.path.exists() {
         anyhow::bail!(
-            "Model not found: {}\nRun: dev-voice download {}",
+            "Model not found: {}\nRun: hyprvoice download {}",
             cfg.model.path.display(),
             cfg.model
                 .path
@@ -616,7 +616,7 @@ fn cmd_doctor() -> Result<()> {
     );
 
     if !model_ok {
-        println!("\nDownload a model with: dev-voice download base.en");
+        println!("\nDownload a model with: hyprvoice download base.en");
     }
 
     let pw_ok = std::process::Command::new("pw-cli")

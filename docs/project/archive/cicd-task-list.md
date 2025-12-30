@@ -19,12 +19,12 @@
 - [x] Add automated artifact uploads (6 variants)
 
 ### **Artifacts Successfully Building** ✅
-1. [x] dev-voice-linux-x64 (CPU-only, universal Linux)
-2. [x] dev-voice-linux-x64-cuda (NVIDIA GPUs with CUDA)
-3. [x] dev-voice-macos-arm64 (M1/M2/M3/M4 CPU-only)
-4. [x] dev-voice-macos-intel (Intel Macs CPU-only)
-5. [x] dev-voice-macos-14-arm64-metal (M1+ with Metal GPU, macOS 14)
-6. [x] dev-voice-macos-15-arm64-metal (M1+ with Metal GPU, macOS 15/26)
+1. [x] hyprvoice-linux-x64 (CPU-only, universal Linux)
+2. [x] hyprvoice-linux-x64-cuda (NVIDIA GPUs with CUDA)
+3. [x] hyprvoice-macos-arm64 (M1/M2/M3/M4 CPU-only)
+4. [x] hyprvoice-macos-intel (Intel Macs CPU-only)
+5. [x] hyprvoice-macos-14-arm64-metal (M1+ with Metal GPU, macOS 14)
+6. [x] hyprvoice-macos-15-arm64-metal (M1+ with Metal GPU, macOS 15/26)
 
 ### **Testing** ✅
 - [x] Tested on macOS 26 (Tahoe) - Audio capture working
@@ -70,9 +70,9 @@
 - [ ] Build for macOS Intel (macos-15-large)
 - [ ] Build with Metal feature enabled
 - [ ] Upload artifacts with platform-specific names:
-  - `dev-voice-macos-arm64`
-  - `dev-voice-macos-arm64-metal`
-  - `dev-voice-macos-intel`
+  - `hyprvoice-macos-arm64`
+  - `hyprvoice-macos-arm64-metal`
+  - `hyprvoice-macos-intel`
 - [ ] Test artifact downloads work
 - [ ] Add artifact retention policy (90 days default)
 
@@ -84,8 +84,8 @@
 - name: Upload Artifact
   uses: actions/upload-artifact@v4
   with:
-    name: dev-voice-macos-arm64-metal
-    path: target/release/dev-voice
+    name: hyprvoice-macos-arm64-metal
+    path: target/release/hyprvoice
 ```
 
 ---
@@ -98,8 +98,8 @@
 - [ ] Build for Linux x86_64 (ubuntu-latest)
 - [ ] Build with CUDA feature (if fixed)
 - [ ] Upload artifacts with platform-specific names:
-  - `dev-voice-linux-x64`
-  - `dev-voice-linux-x64-cuda` (if CUDA fixed)
+  - `hyprvoice-linux-x64`
+  - `hyprvoice-linux-x64-cuda` (if CUDA fixed)
 - [ ] Test artifact downloads work
 - [ ] Document runtime dependencies (ALSA, CUDA)
 
@@ -148,7 +148,7 @@
 
 ### 9. Consider Windows Support
 **Status**: ⏳ Deferred
-**Impact**: Windows users can't use dev-voice
+**Impact**: Windows users can't use hyprvoice
 
 **Discussion Points**:
 - Windows dependencies already in Cargo.toml (line 74-75)
@@ -167,7 +167,7 @@
 
 ### 10. Consider Linux ARM64 Support
 **Status**: ⏳ Deferred
-**Impact**: ARM Linux users (Raspberry Pi, etc.) can't use dev-voice
+**Impact**: ARM Linux users (Raspberry Pi, etc.) can't use hyprvoice
 
 **Discussion Points**:
 - No ARM64 Linux runner available in GitHub Actions standard tier

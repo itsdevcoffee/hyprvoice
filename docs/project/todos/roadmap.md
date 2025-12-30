@@ -1,4 +1,4 @@
-# dev-voice Project Roadmap
+# hyprvoice Project Roadmap
 
 **Status:** Active Development | **Last Updated:** 2025-12-20
 
@@ -70,7 +70,7 @@ Post model-revamp prioritized task list for public release preparation.
 **Effort:** Medium (6-8 hours)
 
 - [ ] Auto-download large-v3-turbo + tiny.en on first run
-- [ ] Interactive setup wizard (dev-voice setup)
+- [ ] Interactive setup wizard (hyprvoice setup)
 - [ ] Auto-detect desktop environment (Waybar/Polybar/none)
 - [ ] Offer integration installation during setup
 - [ ] Show welcome message with keybind instructions

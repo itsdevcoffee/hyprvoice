@@ -1,8 +1,8 @@
-# Deep Research Request: Voice-to-Text Transcription SOTA Analysis for dev-voice
+# Deep Research Request: Voice-to-Text Transcription SOTA Analysis for hyprvoice
 
 ## Context
 
-I'm building **dev-voice**, an open-source local voice dictation tool for Linux developers. I've attached our complete implementation state document that details our current architecture, features, and technical approach.
+I'm building **hyprvoice**, an open-source local voice dictation tool for Linux developers. I've attached our complete implementation state document that details our current architecture, features, and technical approach.
 
 **Current Stack:**
 - **Engine:** OpenAI Whisper Large V3 Turbo via Candle ML framework (Rust)
@@ -25,7 +25,7 @@ I need a comprehensive deep research report analyzing the **state-of-the-art (SO
 
 Please organize your research into the following sections:
 
-### 1. Executive Summary of dev-voice Current State (5-7 paragraphs)
+### 1. Executive Summary of hyprvoice Current State (5-7 paragraphs)
 
 Based on the attached implementation document, provide:
 - Brief overview of our architecture and key design decisions
@@ -119,7 +119,7 @@ Investigate the **latest SOTA techniques** (2023-2025) from:
 
 Create a detailed comparison table:
 
-| Feature/Technique | dev-voice (Current) | Industry Best Practice | Gap Analysis | Difficulty to Implement |
+| Feature/Technique | hyprvoice (Current) | Industry Best Practice | Gap Analysis | Difficulty to Implement |
 |-------------------|---------------------|------------------------|--------------|------------------------|
 | **Model** | Whisper Large V3 Turbo (safetensors) | [Research finding] | [Gap details] | Easy/Medium/Hard |
 | **Quantization** | None (full precision) | [Research finding] | [Gap details] | Easy/Medium/Hard |

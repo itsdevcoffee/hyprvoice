@@ -1,10 +1,10 @@
-# Dev-Voice Configuration
-# Copy to ~/.config/dev-voice/config.toml
+# HyprVoice Configuration
+# Copy to ~/.config/hyprvoice/config.toml
 
 [model]
 # Path to whisper model file
-# Download with: dev-voice download base.en
-path = "~/.local/share/dev-voice/models/ggml-base.en.bin"
+# Download with: hyprvoice download base.en
+path = "~/.local/share/hyprvoice/models/ggml-base.en.bin"
 
 # Language code for transcription
 language = "en"

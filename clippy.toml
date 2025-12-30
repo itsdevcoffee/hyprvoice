@@ -1,4 +1,4 @@
-# Clippy configuration for dev-voice
+# Clippy configuration for hyprvoice
 # See: https://doc.rust-lang.org/clippy/lint_configuration.html
 
 # Cognitive complexity threshold - how complex a function can be

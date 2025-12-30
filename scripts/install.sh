@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install dev-voice from GitHub releases or artifacts
+# Install hyprvoice from GitHub releases or artifacts
 #
 # Usage:
 #   ./scripts/install.sh                    # Auto-detect platform, install CPU version
@@ -15,7 +15,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO="itsdevcoffee/dev-voice"
+REPO="itsdevcoffee/hyprvoice"
 INSTALL_DIR="$HOME/.local/bin"
 ARTIFACT_DIR="./artifacts"
 
@@ -51,14 +51,14 @@ detect_platform() {
             if [ "$arch" = "x86_64" ]; then
                 if [ "$GPU_VERSION" = true ]; then
                     if command -v nvidia-smi &> /dev/null; then
-                        echo "dev-voice-linux-x64-cuda"
+                        echo "hyprvoice-linux-x64-cuda"
                     else
                         echo -e "${YELLOW}Warning: --gpu specified but no NVIDIA GPU detected${NC}" >&2
                         echo -e "${YELLOW}Installing CPU version instead${NC}" >&2
-                        echo "dev-voice-linux-x64"
+                        echo "hyprvoice-linux-x64"
                     fi
                 else
-                    echo "dev-voice-linux-x64"
+                    echo "hyprvoice-linux-x64"
                 fi
             else
                 echo -e "${RED}Error: Linux ARM64 not yet supported${NC}" >&2
@@ -72,12 +72,12 @@ detect_platform() {
                     # Check macOS version
                     local macos_version=$(sw_vers -productVersion | cut -d. -f1)
                     if [ "$macos_version" -ge 15 ]; then
-                        echo "dev-voice-macos-15-arm64-metal"
+                        echo "hyprvoice-macos-15-arm64-metal"
                     else
-                        echo "dev-voice-macos-14-arm64-metal"
+                        echo "hyprvoice-macos-14-arm64-metal"
                     fi
                 else
-                    echo "dev-voice-macos-arm64"
+                    echo "hyprvoice-macos-arm64"
                 fi
             else
                 # Intel Mac
@@ -85,7 +85,7 @@ detect_platform() {
                     echo -e "${YELLOW}Warning: GPU not available on Intel Macs${NC}" >&2
                     echo -e "${YELLOW}Installing CPU version instead${NC}" >&2
                 fi
-                echo "dev-voice-macos-intel"
+                echo "hyprvoice-macos-intel"
             fi
             ;;
         *)
@@ -124,7 +124,7 @@ download_artifact() {
 # Install binary
 install_binary() {
     local artifact_name=$1
-    local source="$ARTIFACT_DIR/$artifact_name/dev-voice"
+    local source="$ARTIFACT_DIR/$artifact_name/hyprvoice"
 
     if [ ! -f "$source" ]; then
         echo -e "${RED}Error: Binary not found at $source${NC}" >&2
@@ -137,11 +137,11 @@ install_binary() {
     # Determine install name
     local install_name
     if [[ "$artifact_name" =~ cuda ]]; then
-        install_name="dev-voice-cuda"
+        install_name="hyprvoice-cuda"
     elif [[ "$artifact_name" =~ metal ]]; then
-        install_name="dev-voice"  # Metal is default on macOS
+        install_name="hyprvoice"  # Metal is default on macOS
     else
-        install_name="dev-voice"
+        install_name="hyprvoice"
     fi
 
     # Install binary
@@ -151,15 +151,15 @@ install_binary() {
     # Install wrapper for CUDA version
     if [[ "$artifact_name" =~ cuda ]]; then
         if [ -f "./scripts/run-cuda12-ollama.sh" ]; then
-            install -m 755 ./scripts/run-cuda12-ollama.sh "$INSTALL_DIR/dev-voice-gpu"
-            echo -e "${GREEN}✓ Installed wrapper to $INSTALL_DIR/dev-voice-gpu${NC}"
+            install -m 755 ./scripts/run-cuda12-ollama.sh "$INSTALL_DIR/hyprvoice-gpu"
+            echo -e "${GREEN}✓ Installed wrapper to $INSTALL_DIR/hyprvoice-gpu${NC}"
         fi
     fi
 }
 
 # Main
 main() {
-    echo "=== dev-voice Installation ==="
+    echo "=== hyprvoice Installation ==="
     echo ""
 
     # Check for gh CLI
@@ -188,23 +188,23 @@ main() {
     echo "Next steps:"
     echo "  1. Download a model:"
     if [[ "$ARTIFACT_NAME" =~ cuda ]]; then
-        echo "     dev-voice-cuda download base.en"
+        echo "     hyprvoice-cuda download base.en"
         echo ""
         echo "  2. Start daemon (with CUDA wrapper):"
-        echo "     dev-voice-gpu daemon"
+        echo "     hyprvoice-gpu daemon"
         echo ""
         echo "  Or test library loading first:"
-        echo "     DEVVOICE_DEBUG=1 dev-voice-gpu --version"
+        echo "     DEVVOICE_DEBUG=1 hyprvoice-gpu --version"
     else
-        echo "     dev-voice download base.en"
+        echo "     hyprvoice download base.en"
         echo ""
         echo "  2. Start daemon:"
-        echo "     dev-voice daemon"
+        echo "     hyprvoice daemon"
     fi
     echo ""
     echo "  3. In another terminal:"
-    echo "     dev-voice start"
-    echo "     dev-voice stop"
+    echo "     hyprvoice start"
+    echo "     hyprvoice stop"
 }
 
 main "$@"

@@ -55,7 +55,7 @@ Migrate the core transcription engine from the archived `whisper-rs` (whisper.cp
 
 ## Expected Outcomes
 - **Implementation Complete** when:
-    - [ ] `dev-voice` transcribes audio using the `Large-v3-Turbo` model via Candle.
+    - [ ] `hyprvoice` transcribes audio using the `Large-v3-Turbo` model via Candle.
     - [ ] Speculative Decoding toggle is functional and provides measurable speedup.
     - [ ] End-to-end latency is consistently below 150ms for short sentences.
     - [ ] VRAM usage is optimized (< 2GB for the Speculative pair).

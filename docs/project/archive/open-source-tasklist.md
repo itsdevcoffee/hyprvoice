@@ -1,6 +1,6 @@
-# dev-voice Open Source Preparation Roadmap
+# hyprvoice Open Source Preparation Roadmap
 
-**Goal:** Prepare dev-voice for open source release with cross-platform support (Linux distros + macOS)
+**Goal:** Prepare hyprvoice for open source release with cross-platform support (Linux distros + macOS)
 
 **Status:** Planning
 **Target:** After completing Weeks 1-3 of code quality improvements
@@ -218,7 +218,7 @@ metal = ["whisper-rs/metal"]  # macOS
 
 **Create:**
 - [ ] `ARCHITECTURE.md` - System design overview
-  - Current: `docs/context/dev-voice-complete.md` (good start!)
+  - Current: `docs/context/hyprvoice-complete.md` (good start!)
   - Expand with: Platform abstraction, trait design, module structure
 
 - [ ] `CONTRIBUTING.md` - How to contribute
@@ -257,7 +257,7 @@ metal = ["whisper-rs/metal"]  # macOS
 - [ ] Add installation badges
 - [ ] Add usage examples with GIFs/screenshots
 - [ ] Link to documentation
-- [ ] Add "Why dev-voice?" section
+- [ ] Add "Why hyprvoice?" section
 
 ---
 
@@ -478,7 +478,7 @@ if !audio_backend_available() {
 - No "second-class citizen" platforms
 
 ### 3. Low Barrier to Entry
-- One-command install: `cargo install dev-voice`
+- One-command install: `cargo install hyprvoice`
 - Pre-built binaries for releases
 - Clear error messages with solutions
 
@@ -543,4 +543,4 @@ if !audio_backend_available() {
 - Documentation is just as important as code
 - Community building takes time - be patient
 
-**Let's make dev-voice an amazing open source project!** 🚀
+**Let's make hyprvoice an amazing open source project!** 🚀

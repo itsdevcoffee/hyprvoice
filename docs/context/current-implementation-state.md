@@ -1,4 +1,4 @@
-# dev-voice: Current Implementation State
+# hyprvoice: Current Implementation State
 
 **Status:** Active Development (v0.1.0)
 **Branch:** `impl/v2-candle`
@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 What is dev-voice?
+## 🎯 What is hyprvoice?
 
 A local, GPU-accelerated voice dictation tool for Linux developers. Press a hotkey, speak naturally, and text appears at your cursor. Built with Rust, powered by OpenAI Whisper via the Candle ML framework.
 
@@ -17,7 +17,7 @@ A local, GPU-accelerated voice dictation tool for Linux developers. Press a hotk
 ```mermaid
 graph TB
     subgraph "User Interaction"
-        A[Hotkey Press<br/>Super+V] --> B[dev-voice start]
+        A[Hotkey Press<br/>Super+V] --> B[hyprvoice start]
         B --> C{Daemon Running?}
         C -->|No| D[Error: Start daemon first]
         C -->|Yes| E[Send StartRecording via<br/>Unix Socket]
@@ -63,7 +63,7 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant User
-    participant Client as dev-voice CLI
+    participant Client as hyprvoice CLI
     participant Daemon as Daemon Server
     participant Audio as Audio Capture Thread
     participant Engine as Candle Whisper Engine
@@ -121,11 +121,11 @@ sequenceDiagram
 
 ```toml
 [model]
-path = "~/.local/share/applications/dev-voice/models/whisper-large-v3-turbo-safetensors"
+path = "~/.local/share/applications/hyprvoice/models/whisper-large-v3-turbo-safetensors"
 model_id = "openai/whisper-large-v3-turbo"
 language = "en"
 prompt = null  # Disabled - causes decoder buffer overflow
-draft_model_path = "~/.local/share/applications/dev-voice/models/ggml-tiny.en.bin"  # Not implemented
+draft_model_path = "~/.local/share/applications/hyprvoice/models/ggml-tiny.en.bin"  # Not implemented
 ```
 
 **Active Model:** Whisper Large V3 Turbo (safetensors format)
@@ -165,7 +165,7 @@ draft_model_path = "~/.local/share/applications/dev-voice/models/ggml-tiny.en.bi
 
 ### 🖥️ Daemon Architecture
 - **Protocol:** Unix domain sockets (JSON messages)
-- **Location:** `~/.local/state/dev-voice/daemon.sock`
+- **Location:** `~/.local/state/hyprvoice/daemon.sock`
 - **Model Loading:** Loads model once into GPU VRAM, stays resident
 - **Threading:** Background thread for audio capture during recording
 - **State Management:** PID file tracking for active recordings
@@ -192,10 +192,10 @@ draft_model_path = "~/.local/share/applications/dev-voice/models/ggml-tiny.en.bi
 
 ### 💾 Configuration System
 - **Format:** TOML
-- **Location:** `~/.config/dev-voice/config.toml`
-- **Validation:** `dev-voice config --check`
-- **Migration:** `dev-voice config --migrate` (creates timestamped backups)
-- **Reset:** `dev-voice config --reset`
+- **Location:** `~/.config/hyprvoice/config.toml`
+- **Validation:** `hyprvoice config --check`
+- **Migration:** `hyprvoice config --migrate` (creates timestamped backups)
+- **Reset:** `hyprvoice config --reset`
 
 ### 📥 Model Download
 - **Registry:** Hardcoded SHA256 checksums for verification
@@ -205,7 +205,7 @@ draft_model_path = "~/.local/share/applications/dev-voice/models/ggml-tiny.en.bi
 
 ### 📝 Logging
 - **Console:** Stdout with timestamps
-- **File:** `~/.local/state/dev-voice/logs/dev-voice.log` (daily rotation)
+- **File:** `~/.local/state/hyprvoice/logs/hyprvoice.log` (daily rotation)
 - **Levels:** INFO (default), DEBUG (with --verbose)
 - **Filter:** Respects `RUST_LOG` environment variable
 
@@ -337,7 +337,7 @@ metal = ["candle-core/metal", "candle-nn/metal", "candle-transformers/metal"]
 ## 📂 Project Structure
 
 ```
-dev-voice/
+hyprvoice/
 ├── src/
 │   ├── main.rs                  # CLI entry point, command routing
 │   ├── audio/mod.rs             # CPAL audio capture, resampling
@@ -391,41 +391,41 @@ cargo build --release --features metal
 
 ```bash
 # Option 1: Use wrapper script (sets LD_LIBRARY_PATH for CUDA)
-dev-voice-gpu daemon &
+hyprvoice-gpu daemon &
 
 # Option 2: Direct binary
-./target/release/dev-voice daemon &
+./target/release/hyprvoice daemon &
 
 # Check daemon is running
-./target/release/dev-voice start
+./target/release/hyprvoice start
 ```
 
 ### Testing Transcription
 
 ```bash
 # Toggle mode (recommended)
-./target/release/dev-voice start   # Start recording
+./target/release/hyprvoice start   # Start recording
 # Speak: "Testing one two three"
-./target/release/dev-voice start   # Stop and transcribe
+./target/release/hyprvoice start   # Stop and transcribe
 
 # Fixed duration (5 seconds)
-./target/release/dev-voice start --duration 5
+./target/release/hyprvoice start --duration 5
 
 # Clipboard mode
-./target/release/dev-voice start --clipboard
+./target/release/hyprvoice start --clipboard
 ```
 
 ### Debugging
 
 ```bash
 # Enable verbose logging
-./target/release/dev-voice --verbose daemon
+./target/release/hyprvoice --verbose daemon
 
 # Check logs
-tail -f ~/.local/state/dev-voice/logs/dev-voice.log
+tail -f ~/.local/state/hyprvoice/logs/hyprvoice.log
 
 # Test keyboard injection
-./target/release/dev-voice enigo-test --text "Hello World"
+./target/release/hyprvoice enigo-test --text "Hello World"
 ```
 
 ---
@@ -525,16 +525,16 @@ tail -f ~/.local/state/dev-voice/logs/dev-voice.log
 **Symptom:** Client can't connect to daemon
 **Cause:** Daemon not started or crashed
 **Fix:**
-1. Check socket exists: `ls ~/.local/state/dev-voice/daemon.sock`
-2. Check daemon process: `pgrep -f "dev-voice daemon"`
-3. Restart: `dev-voice-gpu daemon &`
+1. Check socket exists: `ls ~/.local/state/hyprvoice/daemon.sock`
+2. Check daemon process: `pgrep -f "hyprvoice daemon"`
+3. Restart: `hyprvoice-gpu daemon &`
 
 ### No Text Appears
 **Symptom:** Transcription succeeds but no text injected
 **Cause:** Enigo Wayland permissions or focus issues
 **Fix:**
-1. Test clipboard mode: `dev-voice start --clipboard`
-2. Test enigo: `dev-voice enigo-test`
+1. Test clipboard mode: `hyprvoice start --clipboard`
+2. Test enigo: `hyprvoice enigo-test`
 3. Check Waybar refresh: `pkill -RTMIN+8 waybar`
 
 ### Poor Transcription Quality

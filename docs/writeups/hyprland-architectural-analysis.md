@@ -52,7 +52,7 @@ Since its release, OpenAI's Whisper has become the de facto standard for open-so
 
 The Whisper architecture operates by converting audio into log-Mel spectrograms, which are then passed to the encoder.[^15] The decoder then autoregressively predicts the text caption, conditioned on the encoder outputs and a sequence of special tokens that control language identification, timestamp prediction, and task selection (transcription vs. translation).
 
-For the "dev-voice" use case, two specific variants of Whisper are of primary interest: **Whisper Large V3** and **Whisper Large V3 Turbo**.
+For the "hyprvoice" use case, two specific variants of Whisper are of primary interest: **Whisper Large V3** and **Whisper Large V3 Turbo**.
 
 **Whisper Large V3** is the current heavyweight champion in terms of raw accuracy. With 1.55 billion parameters, it excels at deciphering mumbled or heavily accented speech and has a deeper understanding of rare vocabulary compared to smaller models.[^16] However, this accuracy comes at a steep computational cost. Inference on a standard CPU is prohibitively slow for real-time applications, and even on consumer GPUs, the latency can exceed the 500ms threshold required for a conversational flow.[^17]
 
@@ -72,7 +72,7 @@ The fundamental limitation of the Transformer architecture used in both Whisper 
 
 **Mamba**, based on State Space Models (SSMs), offers a compelling alternative with $O(N)$ scaling and constant memory usage during inference (since it does not need to cache a growing history of Key-Value pairs).[^24] This characteristic makes Mamba theoretically ideal for streaming ASR on edge devices. While the ecosystem is nascent, libraries like mamba-ssm are maturing, and preliminary support is appearing in frameworks like Candle.[^25] However, as of early 2025, there are no pre-trained Mamba ASR models that rival Whisper's accuracy on general domain speech, making it a technology to watch rather than deploy today.[^26]
 
-**RWKV** (Receptance Weighted Key Value) attempts to bridge the gap between RNNs and Transformers. It combines the parallelizable training of Transformers with the efficient, RNN-like inference of recurrent networks. RWKV-6 has demonstrated impressive results in ASR, achieving a WER of 4.6% on the Librispeech dataset.[^28] Because RWKV maintains its state in a fixed-size hidden vector rather than a growing KV cache, it is exceptionally memory efficient for long streams. For a developer willing to live on the bleeding edge, experimenting with RWKV-6-World for transcription could yield a highly efficient, low-memory background process, although the lack of extensive fine-tuning scripts and "dev-voice" specific datasets remains a hurdle.[^29]
+**RWKV** (Receptance Weighted Key Value) attempts to bridge the gap between RNNs and Transformers. It combines the parallelizable training of Transformers with the efficient, RNN-like inference of recurrent networks. RWKV-6 has demonstrated impressive results in ASR, achieving a WER of 4.6% on the Librispeech dataset.[^28] Because RWKV maintains its state in a fixed-size hidden vector rather than a growing KV cache, it is exceptionally memory efficient for long streams. For a developer willing to live on the bleeding edge, experimenting with RWKV-6-World for transcription could yield a highly efficient, low-memory background process, although the lack of extensive fine-tuning scripts and "hyprvoice" specific datasets remains a hurdle.[^29]
 
 ### 3.4 Distil-Whisper and Speculative Decoding
 
@@ -90,7 +90,7 @@ Building a high-performance ML application in Rust requires choosing an inferenc
 
 Candle is a minimalist machine learning framework for Rust developed by Hugging Face. Its primary design philosophy is to be lightweight, performant, and, crucially, to facilitate "serverless" or binary-only deployments without the heavy baggage of the Python runtime.[^33]
 
-The advantages of Candle for a local "dev-voice" tool are manifold:
+The advantages of Candle for a local "hyprvoice" tool are manifold:
 
 1. **Binary Size & Distribution**: A Candle-based application compiles down to a single executable. In contrast, tch-rs requires linking against the massive libtorch shared libraries (often >2GB), creating a distribution nightmare for Linux users.
 
