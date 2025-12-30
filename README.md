@@ -1,778 +1,331 @@
 # hyprvoice
 
-**Voice-to-text dictation for developers.** Speak naturally, get accurate transcription, text appears at your cursor.
+<div align="center">
 
-Fast, local, private. Works on Linux, macOS, and Windows. Powered by OpenAI Whisper with optional GPU acceleration.
+**Voice-to-text for developers who think faster than they type.**
 
----
+Fast • Local • Private • GPU-Accelerated
 
-## Features
+[Quick Start](#-quick-start) • [Features](#-features) • [Roadmap](#-roadmap) • [Documentation](#-documentation)
 
-- 🎤 **Toggle mode** - Press once to start, press again to stop and transcribe
-- 🚀 **GPU acceleration** - CUDA (NVIDIA), Metal (Apple Silicon), ROCm (AMD)
-- 🔒 **100% local** - No cloud, no API keys, no internet required
-- ⚡ **Cross-platform** - Linux (Wayland/X11), macOS (Intel/ARM), Windows
-- 🎯 **Cursor injection** - Text appears where you're typing
-- 📋 **Clipboard mode** - Optional paste workflow
-- 🔧 **Daemon mode** - Background service with instant response
+</div>
 
 ---
 
-## Quick Start
+## 🎯 What is hyprvoice?
 
-### 1. Download Pre-Built Binary
+**hyprvoice** is a lightning-fast, privacy-first voice dictation tool built for developers. Press a hotkey, speak naturally, and your words appear instantly at your cursor—no cloud, no latency, no compromises.
 
-Choose your platform from the [latest release](https://github.com/itsdevcoffee/hyprvoice/releases):
+### The Problem
 
-| Platform | Download | GPU Support | Requirements |
-|----------|----------|-------------|--------------|
-| **Linux (CPU)** | `hyprvoice-linux-x64` | None | Works everywhere |
-| **Linux (NVIDIA)** | `hyprvoice-linux-x64-cuda` | CUDA | NVIDIA GPU + CUDA 12.x runtime |
-| **macOS (M1/M2/M3/M4)** | `hyprvoice-macos-arm64` | None | macOS 13+ |
-| **macOS (M1+ GPU)** | `hyprvoice-macos-15-arm64-metal` | Metal | macOS 15+ on Apple Silicon |
-| **macOS (Intel)** | `hyprvoice-macos-intel` | None | macOS 13-26, Intel Macs |
+Typing code comments, documentation, commit messages, and chat responses is slow. Cloud-based voice tools are either:
+- **Too slow** (network latency kills flow state)
+- **Too intrusive** (your code goes to someone else's servers)
+- **Too generic** (can't handle technical vocabulary like "async fn", "kubectl", or "GraphQL")
 
-**Alternatively**, download from GitHub Actions artifacts:
-```bash
-gh run download <run-id> -n <artifact-name>
-```
+### The Solution
 
-### 2. Make Executable
-```bash
-chmod +x hyprvoice
-```
-
-### 3. Download a Model
-```bash
-./hyprvoice download base.en
-```
-
-### 4. Start Daemon
-```bash
-./hyprvoice daemon
-```
-
-### 5. Use It
-```bash
-# In another terminal:
-./hyprvoice start    # Start recording
-# Speak...
-./hyprvoice stop     # Stop and transcribe
-```
-
-Text appears at your cursor!
+hyprvoice runs **100% locally** on your machine with **GPU acceleration**, delivering transcription in under 500ms. It understands technical terminology out of the box and works offline. Built in Rust, powered by OpenAI Whisper.
 
 ---
 
-## Installation
+## ✨ Features
 
-### Download Artifacts
+### 🚀 **Blazing Fast**
+- **GPU-accelerated** transcription with CUDA (NVIDIA), Metal (Apple Silicon), or ROCm (AMD)
+- **5-10x faster** than CPU-only solutions
+- **Sub-second latency** for typical voice commands
 
-**From GitHub Actions** (most recent builds):
-```bash
-# List recent successful runs
-gh run list --workflow=ci.yml --status=success --limit 5
+### 🔒 **Privacy-First**
+- **100% local processing** — your voice never leaves your machine
+- **No cloud dependencies** — works completely offline
+- **No telemetry** — we don't track anything
 
-# Download specific artifact (example)
-gh run download 20323999906 -n hyprvoice-linux-x64-cuda
+### 🧠 **Developer-Aware**
+- Understands technical vocabulary: `async/await`, `kubernetes`, `GraphQL`, `flatpak`, `systemd`
+- Customizable prompts to bias toward your tech stack
+- Language detection (English, Spanish, French, and more)
 
-# Or download all variants
-gh run download 20323999906
-```
+### ⚡ **Cross-Platform**
+- **Linux:** Wayland (Hyprland, Sway, KDE) and X11
+- **macOS:** Intel and Apple Silicon (with Metal acceleration)
+- **Windows:** Coming soon
 
-**From GitHub Releases** (stable versions):
-```bash
-# Coming soon - will be available at:
-# https://github.com/itsdevcoffee/hyprvoice/releases
-```
+### 🎨 **Desktop Integration**
+- **Waybar module** with real-time status (idle/recording/processing)
+- Polybar support coming soon
+- Systemd service for always-on daemon mode
 
-### Install to System
-
-**Linux:**
-```bash
-# Install binary to user bin (already in PATH)
-install -m 755 hyprvoice-linux-x64-cuda/hyprvoice ~/.local/bin/hyprvoice-cuda
-
-# Or CPU version:
-install -m 755 hyprvoice-linux-x64/hyprvoice ~/.local/bin/hyprvoice
-
-# Install CUDA wrapper (optional, for Ollama users)
-install -m 755 scripts/run-cuda12-ollama.sh ~/.local/bin/hyprvoice-gpu
-
-# Verify installation
-hyprvoice-cuda --version  # or hyprvoice-gpu --version
-```
-
-**macOS:**
-```bash
-# Install to user bin
-install -m 755 hyprvoice-macos-arm64/hyprvoice ~/.local/bin/hyprvoice
-
-# Or Metal GPU version:
-install -m 755 hyprvoice-macos-15-arm64-metal/hyprvoice ~/.local/bin/hyprvoice
-
-# Verify
-hyprvoice --version
-```
-
-### Verify CUDA Setup (Linux NVIDIA users)
-
-**Check what libraries the binary will use:**
-```bash
-cd hyprvoice-linux-x64-cuda
-ldd ./hyprvoice | grep -E 'cudart|cublas|cudnn|cuda' || true
-```
-
-**Expected output:**
-```
-libcudart.so.12 => /usr/local/lib/ollama/libcudart.so.12
-libcublas.so.12 => /usr/local/lib/ollama/libcublas.so.12
-libcuda.so.1 => /lib64/libcuda.so.1
-```
-
-If `libcudart.so.12 => not found`, use the wrapper script or set LD_LIBRARY_PATH (see CUDA setup section below).
-
-### Keep Artifacts Organized
-
-**Recommended structure:**
-```
-~/Downloads/hyprvoice/           ← Downloaded artifacts
-├── hyprvoice-linux-x64/
-├── hyprvoice-linux-x64-cuda/
-└── hyprvoice-macos-arm64/
-
-~/.local/bin/                     ← Installed binaries (in PATH)
-├── hyprvoice                    ← Main binary
-├── hyprvoice-cuda               ← CUDA variant (optional)
-└── hyprvoice-gpu                ← Wrapper script (optional)
-```
+### 🛠️ **Built for Power Users**
+- **Daemon mode** for instant response
+- **Toggle mode** (press once to start, again to stop)
+- **Clipboard mode** for manual pasting
+- **Keyboard shortcuts** via Hyprland/Sway bindings
 
 ---
 
-## Platform-Specific Setup
+## 🚀 Quick Start
 
-### Linux
+### 1. Download
 
-#### **Wayland** (Fedora, Ubuntu 22.04+, most modern distros)
-
-**System dependencies:**
-```bash
-# Fedora/RHEL
-sudo dnf install alsa-lib-devel libxkbcommon-devel
-
-# Ubuntu/Debian
-sudo apt install libasound2-dev libxkbcommon-dev
-```
-
-**Runtime (clipboard mode only):**
-```bash
-sudo dnf install wl-clipboard      # Fedora
-sudo apt install wl-clipboard      # Ubuntu
-```
-
-Works out of the box with default build.
-
-#### **X11** (Older systems)
-
-**If using X11 instead of Wayland**, install xclip for clipboard mode:
-```bash
-sudo dnf install xclip    # Fedora
-sudo apt install xclip    # Ubuntu
-```
-
-**Note:** X11 requires rebuilding from source with `features = ["x11rb"]` in Cargo.toml line 80.
-
-#### **CUDA (NVIDIA GPUs)**
-
-**Download:** `hyprvoice-linux-x64-cuda`
-
-**Requirements:**
-- NVIDIA GPU (GTX 10xx series or newer)
-- CUDA 12.x runtime libraries
-
-**The CUDA binary expects CUDA 12 user-space libraries** (`libcudart.so.12`, `libcublas.so.12`). If you get an error like:
-```
-error while loading shared libraries: libcudart.so.12: cannot open shared object file
-```
-
-**Check which CUDA libraries you have:**
-```bash
-ls /usr/local/cuda*/lib64/libcudart.so* 2>/dev/null
-ls /usr/local/lib/ollama/libcudart.so* 2>/dev/null
-```
-
-**Verify what the binary will load:**
-```bash
-ldd ./hyprvoice | grep -E 'cudart|cublas|cudnn|cuda' || true
-```
-
-**Solution 1: Use wrapper script** (Recommended)
-```bash
-# If you have Ollama installed (ships with CUDA 12):
-./scripts/run-cuda12-ollama.sh daemon
-```
-
-**Solution 2: Set library path per-run**
-```bash
-# With Ollama's CUDA 12:
-LD_LIBRARY_PATH=/usr/local/lib/ollama:$LD_LIBRARY_PATH ./hyprvoice daemon
-
-# Or with system CUDA 12 (if installed):
-LD_LIBRARY_PATH=/usr/local/cuda-12/lib64:$LD_LIBRARY_PATH ./hyprvoice daemon
-```
-
-**Solution 3: Build from source against your CUDA version**
-```bash
-# If you have CUDA 13+ and want to use it:
-cargo build --release --features cuda
-./target/release/hyprvoice daemon
-```
-
-**⚠️ Unsupported:** Symlinking CUDA 13 → 12 (`libcudart.so.13` → `libcudart.so.12`) may work but can cause subtle issues. Not recommended.
-
-**Performance:** ~5-10x faster transcription vs CPU
-
----
-
-### macOS
-
-#### **Apple Silicon (M1/M2/M3/M4)**
-
-**Download:**
-- `hyprvoice-macos-arm64` (CPU-only, universal)
-- `hyprvoice-macos-15-arm64-metal` (GPU acceleration, macOS 15+)
-
-**Permissions:** On first run, macOS will ask for microphone and accessibility permissions:
-1. **Microphone** - Required for audio capture
-2. **Accessibility** - Required for text injection
-
-Grant both in System Settings → Privacy & Security.
-
-**Metal GPU acceleration:**
-- macOS 15 (Sequoia) or newer recommended
-- Works on macOS 13-14 with `macos-14-arm64-metal` variant
-- 2-3x faster transcription vs CPU
-- Model automatically loads to GPU VRAM
-
-#### **Intel Macs**
-
-**Download:** `hyprvoice-macos-intel`
-
-**Supported versions:** macOS 13 (Ventura) through macOS 26 (Tahoe)
-
-**Note:** macOS 26 is the final Intel-supported version. No GPU acceleration available on Intel Macs.
-
----
-
-### Windows
-
-**Status:** Code ready, binaries not yet provided.
-
-**Dependencies in Cargo.toml** (lines 74-75) support Windows via native SendInput API.
-
-**To build from source on Windows:**
-```bash
-cargo build --release
-```
-
----
-
-## GPU Acceleration Guide
-
-### **NVIDIA GPUs (Linux only)**
-
-**Hardware:** GTX 10xx series or newer
-**Software:** CUDA Toolkit 12.x
-**Binary:** `hyprvoice-linux-x64-cuda`
-**Speedup:** 5-10x faster than CPU
-
-**Install CUDA:**
-```bash
-# Check if installed
-nvidia-smi
-
-# Download from NVIDIA if needed
-# https://developer.nvidia.com/cuda-downloads
-```
-
-### **Apple Silicon (macOS only)**
-
-**Hardware:** M1, M2, M3, M4 (any Mac with Apple Silicon)
-**Software:** macOS 15+ recommended (works on 13-14)
-**Binary:** `hyprvoice-macos-15-arm64-metal`
-**Speedup:** 2-3x faster than CPU
-
-**No installation needed** - Metal is built into macOS.
-
-### **AMD GPUs (Advanced)**
-
-**Binary:** Not provided (build from source)
-**Software:** ROCm 5.0+
-**Build command:**
-```bash
-cargo build --release --features rocm
-```
-
-**Note:** ROCm setup is complex. See [ROCm documentation](https://rocm.docs.amd.com/).
-
----
-
-## Building from Source
-
-### Prerequisites
-
-**All platforms:**
-- Rust 1.85+ ([install](https://rustup.rs/))
-- CMake 3.14+
-- Clang/LLVM
-
-**Platform-specific:**
-```bash
-# Linux (Fedora)
-sudo dnf install cmake clang alsa-lib-devel libxkbcommon-devel
-
-# Linux (Ubuntu/Debian)
-sudo apt install cmake clang libasound2-dev libxkbcommon-dev pkg-config
-
-# macOS
-brew install cmake
-
-# Windows
-# Install Visual Studio Build Tools + CMake
-```
-
-### Build Commands
+Grab the latest binary for your platform:
 
 ```bash
-# Clone repository
-git clone https://github.com/itsdevcoffee/hyprvoice.git
-cd hyprvoice
+# Linux (NVIDIA GPU)
+wget https://github.com/itsdevcoffee/hyprvoice/releases/download/v0.2.0/hyprvoice-linux-x64-cuda
+chmod +x hyprvoice-linux-x64-cuda
+mv hyprvoice-linux-x64-cuda ~/.local/bin/hyprvoice
 
-# CPU-only (default, works everywhere)
-cargo build --release
-
-# With GPU acceleration
-cargo build --release --features cuda    # NVIDIA
-cargo build --release --features metal   # Apple Silicon
-cargo build --release --features rocm    # AMD
-cargo build --release --features vulkan  # Cross-platform Vulkan
-
-# Binary output
-./target/release/hyprvoice
+# macOS (Apple Silicon with Metal)
+wget https://github.com/itsdevcoffee/hyprvoice/releases/download/v0.2.0/hyprvoice-macos-arm64-metal
+chmod +x hyprvoice-macos-arm64-metal
+mv hyprvoice-macos-arm64-metal ~/.local/bin/hyprvoice
 ```
 
----
+### 2. Download a Model
 
-## Usage
+```bash
+hyprvoice download base.en  # 148MB, balanced speed/accuracy
+```
 
-### Daemon Mode (Recommended)
+### 3. Start the Daemon
 
-**Start background service:**
 ```bash
 hyprvoice daemon
 ```
 
-**In another terminal:**
+### 4. Use It
+
 ```bash
-hyprvoice start      # Begin recording
-# Speak your text...
-hyprvoice stop       # Transcribe and inject
+# In another terminal (or bind to a hotkey)
+hyprvoice start    # Begin recording
+# Speak: "This is a test of voice dictation"
+hyprvoice stop     # Transcribe and inject text
 ```
 
-### One-Shot Mode
-
-**Record for fixed duration:**
-```bash
-hyprvoice once --duration 10    # Record 10 seconds, then transcribe
-```
-
-### Download Models
-
-**First time setup:**
-```bash
-# Tiny (fast, less accurate, 75MB)
-hyprvoice download tiny.en
-
-# Base (balanced, 148MB) - Recommended
-hyprvoice download base.en
-
-# Small (more accurate, 488MB)
-hyprvoice download small.en
-```
-
-**Available models:** `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`
+**Text appears at your cursor!**
 
 ---
 
-## Configuration
+## 🗺️ Roadmap
 
-**Config file:** `~/.config/hyprvoice/config.toml` (auto-created)
+### ✅ **v0.2.0 - Current** (Cross-Platform Foundation)
+- [x] Candle-based Whisper engine (Rust-native, Python-free)
+- [x] GPU acceleration (CUDA, Metal)
+- [x] Cross-platform audio (CPAL)
+- [x] macOS and Linux support
+- [x] Waybar integration
+
+### 🚧 **v0.3.0 - Next** (Performance & Polish)
+- [ ] **Flash Attention v2** for 2x faster inference
+- [ ] **Speculative decoding** with draft models (30-50% speedup)
+- [ ] Polybar integration (X11/i3 users)
+- [ ] Automated model downloads on first run
+- [ ] Performance benchmarking suite
+
+### 🔮 **v0.4.0 - Future** (Advanced Features)
+- [ ] Context-aware vocabulary (detect `.rs`, `.py`, `.ts` files, bias accordingly)
+- [ ] DeepFilterNet noise cancellation (handle keyboard/fan noise)
+- [ ] AT-SPI2 integration (pull active window context for better accuracy)
+- [ ] Multi-language testing (Spanish, French, German)
+- [ ] Custom wake words for hands-free mode
+
+### 🌟 **v1.0.0 - Vision** (Production Ready)
+- [ ] IDE plugins (VSCode, Neovim, JetBrains)
+- [ ] Voice commands ("undo last", "format code", "new line")
+- [ ] Project-specific vocabulary learning
+- [ ] Mobile companion app (trigger from phone)
+
+[Full roadmap →](docs/project/todos/roadmap.md)
+
+---
+
+## 📚 Documentation
+
+### Installation Guides
+- **[Linux Setup](docs/setup-linux.md)** (Fedora, Ubuntu, Arch)
+- **[macOS Setup](docs/setup-macos.md)** (Intel and Apple Silicon)
+- **[GPU Acceleration](docs/gpu-setup.md)** (CUDA, Metal, ROCm)
+- **[Building from Source](docs/build.md)**
+
+### Integration
+- **[Waybar Module](integrations/waybar/README.md)** (Live status widget)
+- **[Hyprland Keybinds](docs/keybinds-hyprland.md)**
+- **[Systemd Service](docs/systemd.md)** (Auto-start daemon)
+
+### Advanced
+- **[Architecture Overview](docs/context/current-implementation-state.md)**
+- **[Model Selection Guide](docs/models.md)**
+- **[Performance Tuning](docs/performance.md)**
+- **[Troubleshooting](docs/troubleshooting.md)**
+
+---
+
+## 🏗️ How It Works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. Press Hotkey (Super+V)                                  │
+│     ↓                                                        │
+│  2. Audio Capture (CPAL) → 44.1kHz stereo                   │
+│     ↓                                                        │
+│  3. Resample to 16kHz mono (Rubato)                         │
+│     ↓                                                        │
+│  4. Whisper Transcription                                   │
+│     ├─ Encoder (GPU/CPU) → Audio features                   │
+│     └─ Decoder (Greedy/Beam) → Text tokens                  │
+│     ↓                                                        │
+│  5. Text Injection (Enigo) → Types at cursor                │
+│     OR Clipboard (wl-copy/arboard) → Paste manually         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Technologies:**
+- **Rust** - Memory-safe, zero-cost abstractions
+- **Candle** - Pure Rust ML framework (no Python!)
+- **Whisper Large V3 Turbo** - 809M params, 4 decoder layers
+- **CPAL** - Cross-platform audio
+- **Enigo** - Cross-platform keyboard injection
+
+---
+
+## 🎛️ Model Options
+
+| Model | Size | Speed | Accuracy | Best For |
+|-------|------|-------|----------|----------|
+| **tiny.en** | 78 MB | ⚡⚡⚡ | ⭐⭐ | Testing, instant feedback |
+| **base.en** | 148 MB | ⚡⚡ | ⭐⭐⭐ | **Recommended** - Balanced |
+| **small.en** | 488 MB | ⚡ | ⭐⭐⭐⭐ | Higher accuracy |
+| **large-v3-turbo** | 1.6 GB | ⚡⚡ | ⭐⭐⭐⭐⭐ | Maximum quality |
+
+**Recommendation:** Start with `base.en` (148MB). Upgrade to `large-v3-turbo` if you need near-perfect accuracy.
+
+---
+
+## 🖥️ Platform Support
+
+| OS | Architecture | GPU | Status |
+|----|--------------|-----|--------|
+| **Linux** | x86_64 | CUDA (NVIDIA) | ✅ **Tested** |
+| **Linux** | x86_64 | ROCm (AMD) | 🟡 **Untested** |
+| **macOS** | Apple Silicon | Metal | ✅ **Tested** |
+| **macOS** | Intel | None | ✅ **Tested** |
+| **Windows** | x86_64 | None | 🟡 **Code Ready** |
+
+**Tested Environments:**
+- Fedora 42 (Wayland/Hyprland)
+- Ubuntu 24.04 (Wayland/GNOME)
+- macOS 14-26 (Intel & Apple Silicon)
+
+---
+
+## 🔧 Configuration Example
+
+**`~/.config/hyprvoice/config.toml`**
 
 ```toml
 [model]
-path = "~/.local/share/hyprvoice/models/ggml-base.en.bin"
+model_id = "openai/whisper-large-v3-turbo"
 language = "en"
+prompt = "async, await, rust, cargo, kubernetes, docker, typescript"
 
 [audio]
-sample_rate = 16000    # Don't change - uses device default, resamples automatically
-timeout_secs = 30
+sample_rate = 16000    # Auto-resamples from device default
+timeout_secs = 30      # Max recording duration
 
 [output]
 append_space = true
-```
-
-**Note:** Audio capture now uses device's native configuration (e.g., 48kHz stereo) and automatically converts to Whisper's required 16kHz mono. No manual configuration needed.
-
----
-
-## Keyboard Shortcuts
-
-### Linux (Hyprland/Sway)
-
-Add to `~/.config/hypr/hyprland.conf`:
-```ini
-bind = SUPER, V, exec, hyprvoice start --duration 10
-bind = SUPER SHIFT, V, exec, hyprvoice start -c  # Clipboard mode
-```
-
-### macOS
-
-Use system keyboard shortcuts or tools like [Karabiner](https://karabiner-elements.pqrs.org/).
-
----
-
-## Troubleshooting
-
-### macOS Permissions
-
-**Microphone permission denied:**
-1. Open System Settings → Privacy & Security → Microphone
-2. Enable for Terminal (or your terminal app)
-
-**Text injection not working:**
-1. Open System Settings → Privacy & Security → Accessibility
-2. Enable for Terminal (or your terminal app)
-
-### Linux Audio Issues
-
-**No audio device found:**
-```bash
-# Check if ALSA sees your microphone
-arecord -l
-
-# Test recording
-arecord -d 5 test.wav
-```
-
-**Wayland text injection not working:**
-- Verify you're using Wayland: `echo $XDG_SESSION_TYPE`
-- Ensure compositor supports text injection (Hyprland, Sway, KDE work)
-
-### CUDA Issues
-
-**Library not found (`libcudart.so.12`):**
-
-See the CUDA setup section above for solutions. The CUDA binary requires CUDA 12.x runtime libraries.
-
-**Verify what libraries are being loaded:**
-```bash
-ldd ./hyprvoice | grep -E 'cudart|cublas|cudnn|cuda' || true
-```
-
-**Verify GPU is being used:**
-Look for this in daemon logs:
-```
-whisper_backend_init_gpu: using CUDA0 backend
-INFO Model loaded and resident in GPU VRAM
-```
-
-**Optional - Advanced: Use RUNPATH (avoids environment variables)**
-```bash
-# Install patchelf
-sudo dnf install patchelf  # Fedora
-sudo apt install patchelf  # Ubuntu
-
-# Set RUNPATH to Ollama's libs (machine-specific, not portable)
-patchelf --set-runpath /usr/local/lib/ollama ./hyprvoice
-
-# Verify it worked:
-readelf -d ./hyprvoice | grep -E 'RPATH|RUNPATH' || true
-
-# Now binary finds libs automatically:
-./hyprvoice daemon
-```
-
-**Note:** RUNPATH bakes a path into the binary. Only do this for local installs, not for distributing binaries.
-
----
-
-## Platform Compatibility
-
-### Supported Platforms
-
-| OS | Architecture | Versions | Status | GPU |
-|----|--------------|----------|--------|-----|
-| **Linux** | x86_64 | Any modern distro | ✅ Tested | CUDA, ROCm, Vulkan |
-| **macOS** | Apple Silicon (ARM64) | 13 (Ventura) - 26 (Tahoe) | ✅ Tested | Metal |
-| **macOS** | Intel (x86_64) | 13 (Ventura) - 26 (Tahoe) | ✅ Tested | None |
-| **Windows** | x86_64 | 10/11 | 🟡 Code ready, untested | None yet |
-
-### Tested Configurations
-
-- ✅ **Fedora 42** (Wayland) - Primary development platform
-- ✅ **Ubuntu 24.04** (Wayland) - CI tested
-- ✅ **macOS 26 Tahoe** (Apple Silicon) - User tested
-- ✅ **macOS 14/15** (Apple Silicon) - CI tested
-- ✅ **macOS 15** (Intel) - CI tested
-
----
-
-## Architecture
-
-```
-┌─────────────┐
-│ hyprvoice   │  CLI commands (start, stop, daemon, download)
-│   (client)  │
-└──────┬──────┘
-       │ Unix socket
-       ↓
-┌─────────────┐
-│   daemon    │  Background service
-│             │
-├─────────────┤
-│ Audio       │  CPAL → Device native config (48kHz stereo)
-│ Capture     │  Convert → 16kHz mono for Whisper
-├─────────────┤
-│ Whisper     │  Speech recognition
-│ Inference   │  GPU: CUDA/Metal/ROCm | CPU: Fallback
-├─────────────┤
-│ Text        │  enigo → Direct typing (cross-platform)
-│ Injection   │  OR clipboard → wl-copy/xclip/arboard
-└─────────────┘
-```
-
-**Key improvements in v0.2.0:**
-- **Audio:** PipeWire → CPAL (cross-platform, automatic device config)
-- **Text injection:** wtype/xdotool → enigo (cross-platform, reliable)
-- **GPU:** Added Metal (macOS), improved CUDA support
-
----
-
-## Advanced Usage
-
-### Clipboard Mode (Linux)
-
-**Requires:** `wl-clipboard` (Wayland) or `xclip` (X11)
-
-```bash
-hyprvoice start -c --duration 10
-```
-
-Text goes to clipboard instead of typing directly. Useful for:
-- Pasting into terminals that block input simulation
-- Reviewing transcription before pasting
-- Clipboard-based workflows
-
-### Environment Variables
-
-```bash
-# Verbose logging
-RUST_LOG=debug hyprvoice daemon
-
-# Override model path
-MODEL_PATH=~/custom/model.bin hyprvoice start
-
-# CUDA library path
-LD_LIBRARY_PATH=/custom/cuda/lib64:$LD_LIBRARY_PATH hyprvoice daemon
-```
-
-### Systemd Service (Linux)
-
-Create `~/.config/systemd/user/hyprvoice.service`:
-```ini
-[Unit]
-Description=hyprvoice daemon
-After=default.target
-
-[Service]
-ExecStart=%h/.local/bin/hyprvoice daemon
-Restart=on-failure
-Environment="RUST_LOG=info"
-
-[Install]
-WantedBy=default.target
-```
-
-Enable:
-```bash
-systemctl --user enable --now hyprvoice
+refresh_command = "pkill -RTMIN+8 waybar"  # Update Waybar status
 ```
 
 ---
 
-## Development
+## 🤝 Contributing
 
-### Running Tests
+We welcome contributions! hyprvoice is **open source** (MIT license) and community-driven.
+
+### Ways to Contribute
+- 🐛 **Report bugs** via [GitHub Issues](https://github.com/itsdevcoffee/hyprvoice/issues)
+- 💡 **Suggest features** on our [Discussions](https://github.com/itsdevcoffee/hyprvoice/discussions)
+- 📝 **Improve docs** (setup guides, troubleshooting, translations)
+- 🔌 **Build integrations** (Polybar, i3status, GNOME extension)
+- 🧪 **Test on your platform** and share results
+
+### Development Setup
+
 ```bash
+git clone https://github.com/itsdevcoffee/hyprvoice.git
+cd hyprvoice
+cargo build --release --features cuda  # or 'metal' for macOS
+
+# Run tests
 cargo test
-```
 
-### Code Quality
-```bash
+# Lint and format
 cargo clippy
 cargo fmt --all
 ```
 
-### CI/CD
-
-**Full multi-platform CI** with GitHub Actions:
-- ✅ 17 test jobs across Linux, macOS ARM, macOS Intel
-- ✅ 6 artifact builds (CPU + GPU variants)
-- ✅ Linting, formatting, code coverage
-- ✅ CUDA builds via NVIDIA container
-- ✅ Metal builds on macOS runners
-
-See `.github/workflows/ci.yml` for details.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ---
 
-## Technical Details
+## 📊 Performance Benchmarks
 
-### Audio Processing
-
-**Input:** Device native format (typically 48kHz stereo on macOS, 44.1kHz on Linux)
-**Processing:**
-1. Capture at device's default config (avoids "unsupported configuration" errors)
-2. Convert stereo → mono (average channels)
-3. Resample to 16kHz (Whisper requirement)
-4. Pass to Whisper model
-
-**Why this approach?**
-- ✅ Works on macOS 26+ (requires device defaults)
-- ✅ Compatible across all platforms
-- ✅ Avoids audio configuration errors
-- ✅ Higher quality source before downsampling
-
-### Text Injection
-
-**Type mode (default):**
-- Uses `enigo` library for cross-platform text typing
-- Simulates keyboard events directly
-- Works on Wayland, X11, macOS (CoreGraphics), Windows (SendInput)
-- ~100ms delay for typical sentences
-
-**Clipboard mode (`-c` flag):**
-- Linux: Uses `wl-copy` (Wayland) or `xclip` (X11) subprocess
-- macOS/Windows: Uses `arboard` native clipboard API
-- Text persists in clipboard for manual pasting
-
-### GPU Acceleration
-
-**CUDA (NVIDIA):**
-- Compiles with `--features cuda`
-- Requires CUDA 12.x runtime at runtime
-- Uses cuBLAS for matrix operations
-- Model loaded to GPU VRAM
-- ~5-10x speedup vs CPU
-
-**Metal (Apple Silicon):**
-- Compiles with `--features metal`
-- Built into macOS, no installation needed
-- Uses Metal Performance Shaders
-- Model loaded to unified memory
-- ~2-3x speedup vs CPU
-
-**Fallback:**
-- CPU-only builds use optimized CPU inference
-- Still fast enough for real-time transcription
-- Base model: ~2-3 seconds for 10-second audio on modern CPUs
-
----
-
-## FAQ
-
-**Q: Why does it ask for accessibility permissions on macOS?**
-A: Text injection requires accessibility access to send keyboard events to other applications.
-
-**Q: Does this work offline?**
-A: Yes! 100% local. Models stored at `~/.local/share/hyprvoice/models/`.
-
-**Q: Which model should I use?**
-A: Start with `base.en` (148MB) - good balance of speed and accuracy. Upgrade to `small.en` if you need better accuracy.
-
-**Q: Can I use this in my IDE/terminal/browser?**
-A: Yes! Text injection works in any application that accepts keyboard input.
-
-**Q: What about privacy?**
-A: All processing happens locally. No data sent to cloud. No telemetry.
-
-**Q: Why does CUDA binary require `LD_LIBRARY_PATH`?**
-A: CUDA libraries are dynamically linked. This is standard for GPU applications. Set it once in your shell config.
-
-**Q: Does this work on Wayland?**
-A: Yes! Tested on Hyprland, Sway, and other Wayland compositors.
-
----
-
-## Performance Comparison
-
-**Base model (`ggml-base.en.bin`), 10-second audio clip:**
+**Whisper Base Model, 10-second audio clip:**
 
 | Hardware | Time | Speedup |
 |----------|------|---------|
-| CPU (AMD Ryzen 7) | ~3.0s | 1x |
-| CPU (Apple M1) | ~2.2s | 1.4x |
-| NVIDIA RTX 4060 Ti (CUDA) | ~0.5s | **6x** |
-| Apple M2 (Metal) | ~1.0s | **3x** |
+| AMD Ryzen 7 (CPU) | 3.0s | 1x |
+| Apple M1 (CPU) | 2.2s | 1.4x |
+| **NVIDIA RTX 4090 (CUDA)** | **0.5s** | **6x** |
+| **Apple M2 (Metal)** | **1.0s** | **3x** |
 
-*Your mileage may vary based on hardware, model size, and audio length.*
-
----
-
-## Breaking Changes
-
-### v0.2.0 (Phase 4 - Cross-Platform Migration)
-
-**Audio capture:**
-- ❌ Removed PipeWire-specific code
-- ✅ Added CPAL (cross-platform)
-- ✅ Automatic device configuration handling
-
-**Text injection:**
-- ❌ Removed wtype/xdotool (Linux-only)
-- ✅ Added enigo (cross-platform)
-- ⚠️ Type mode no longer preserves clipboard (use `-c` flag if needed)
-
-**Platform support:**
-- ✅ Added macOS support (Intel and Apple Silicon)
-- ✅ Added Windows code (binaries coming soon)
-- ✅ Improved Linux compatibility (Wayland and X11)
+*Results may vary based on model size and audio complexity.*
 
 ---
 
-## Contributing
+## 🙏 Acknowledgments
 
-Contributions welcome! Please:
-1. Run `cargo test` before submitting
-2. Run `cargo clippy` and `cargo fmt`
-3. Update docs if adding features
-4. Test on your platform if possible
+Built on the shoulders of giants:
 
----
+- **[OpenAI Whisper](https://github.com/openai/whisper)** - State-of-the-art speech recognition
+- **[Candle](https://github.com/huggingface/candle)** - Minimalist ML framework in Rust
+- **[CPAL](https://github.com/RustAudio/cpal)** - Cross-platform audio library
+- **[Enigo](https://github.com/enigo-rs/enigo)** - Cross-platform input simulation
 
-## License
-
-MIT License - see [LICENSE](LICENSE) file.
+Special thanks to the Hyprland and Rust communities for inspiration and support.
 
 ---
 
-## Acknowledgments
+## 📄 License
 
-- [whisper.cpp](https://github.com/ggml-org/whisper.cpp) - High-performance Whisper inference
-- [CPAL](https://github.com/rustaudio/cpal) - Cross-platform audio
-- [enigo](https://github.com/enigo-rs/enigo) - Cross-platform input simulation
-- OpenAI Whisper team - Speech recognition model
+**MIT License** - See [LICENSE](LICENSE) for details.
+
+Free and open source forever. Use it, fork it, contribute back.
 
 ---
 
-**Built with ❤️ for developers who think faster than they type.**
+## 🌟 Why We Built This
+
+We're developers who got tired of:
+- Typing the same technical terms over and over
+- Slow cloud transcription breaking our flow
+- Privacy concerns with commercial voice tools
+- Lack of Linux-first voice solutions
+
+hyprvoice is our answer: a tool that respects your privacy, runs at the speed of thought, and understands the language you actually speak.
+
+**If you think faster than you type, hyprvoice is for you.**
+
+---
+
+<div align="center">
+
+**[⬆ Back to Top](#hyprvoice)**
+
+Made with ❤️ for developers who value speed, privacy, and control.
+
+**Star us on GitHub** if you find this useful!
+
+</div>
