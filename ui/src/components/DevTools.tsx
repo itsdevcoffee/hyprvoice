@@ -287,7 +287,7 @@ function IPCCallCard({ call }: IPCCallCardProps) {
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 

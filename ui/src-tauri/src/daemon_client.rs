@@ -88,10 +88,7 @@ pub fn is_daemon_running() -> bool {
     }
 
     // Try to ping
-    match send_request(DaemonRequest::Ping) {
-        Ok(_) => true,
-        Err(_) => false,
-    }
+    send_request(DaemonRequest::Ping).is_ok()
 }
 
 /// Get daemon status with detailed info
