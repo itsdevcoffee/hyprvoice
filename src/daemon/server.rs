@@ -85,7 +85,11 @@ impl DaemonServer {
 
         // Use CandleEngine (new Candle-based implementation)
         let transcriber = crate::transcribe::candle_engine::CandleEngine::with_options(
-            config.model.path.to_str().ok_or_else(|| anyhow::anyhow!("Invalid model path"))?,
+            config
+                .model
+                .path
+                .to_str()
+                .ok_or_else(|| anyhow::anyhow!("Invalid model path"))?,
             &config.model.language,
             config.model.prompt.clone(),
         )?;
@@ -105,8 +109,7 @@ impl DaemonServer {
     /// Save audio recording as WAV file with timestamp
     fn save_audio_recording(samples: &[f32], output_dir: &Path, sample_rate: u32) -> Result<()> {
         // Create output directory if it doesn't exist
-        std::fs::create_dir_all(output_dir)
-            .context("Failed to create audio clips directory")?;
+        std::fs::create_dir_all(output_dir).context("Failed to create audio clips directory")?;
 
         // Generate filename with timestamp
         let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S");
@@ -121,16 +124,16 @@ impl DaemonServer {
             sample_format: hound::SampleFormat::Float,
         };
 
-        let mut writer = hound::WavWriter::create(&filepath, spec)
-            .context("Failed to create WAV file")?;
+        let mut writer =
+            hound::WavWriter::create(&filepath, spec).context("Failed to create WAV file")?;
 
         for &sample in samples {
-            writer.write_sample(sample)
+            writer
+                .write_sample(sample)
                 .context("Failed to write sample")?;
         }
 
-        writer.finalize()
-            .context("Failed to finalize WAV file")?;
+        writer.finalize().context("Failed to finalize WAV file")?;
 
         info!("Audio saved to: {}", filepath.display());
         Ok(())
@@ -245,7 +248,11 @@ impl DaemonServer {
         // Save audio if enabled in config
         let config = crate::config::load()?;
         if config.audio.save_audio_clips {
-            if let Err(e) = Self::save_audio_recording(&samples, &config.audio.audio_clips_path, config.audio.sample_rate) {
+            if let Err(e) = Self::save_audio_recording(
+                &samples,
+                &config.audio.audio_clips_path,
+                config.audio.sample_rate,
+            ) {
                 warn!("Failed to save audio recording: {}", e);
             }
         }
@@ -275,7 +282,7 @@ impl DaemonServer {
                 return Ok(DaemonResponse::Error {
                     message: format!("Transcription error: {}", e),
                 });
-            }
+            },
         };
 
         if text.is_empty() {

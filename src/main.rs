@@ -327,7 +327,10 @@ fn cmd_start_fixed(model_override: Option<String>, duration: u32, clipboard: boo
     info!("Loading whisper model...");
     // Use CandleEngine (new Candle-based implementation)
     let mut transcriber = transcribe::candle_engine::CandleEngine::with_options(
-        cfg.model.path.to_str().ok_or_else(|| anyhow::anyhow!("Invalid model path"))?,
+        cfg.model
+            .path
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("Invalid model path"))?,
         &cfg.model.language,
         cfg.model.prompt.clone(),
     )?;

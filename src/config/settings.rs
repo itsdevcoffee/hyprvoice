@@ -69,7 +69,7 @@ impl Default for Config {
                 model_id: "openai/whisper-large-v3-turbo".to_string(),
                 draft_model_path: Some(data_dir.join("models/ggml-tiny.en.bin")),
                 language: "en".to_string(),
-                prompt: None,  // Disabled by default - causes decoder issues when enabled
+                prompt: None, // Disabled by default - causes decoder issues when enabled
             },
             audio: AudioConfig {
                 sample_rate: 16000,

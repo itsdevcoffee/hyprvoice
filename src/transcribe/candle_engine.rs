@@ -2,10 +2,10 @@ use anyhow::Result;
 use candle_core::{Device, IndexOp, Tensor};
 use candle_nn::VarBuilder;
 use candle_transformers::models::whisper::{self, Config};
-use hf_hub::{api::sync::Api, Repo};
+use hf_hub::{Repo, api::sync::Api};
 use std::path::Path;
-use tracing::{debug, error, info, warn};
 use tokenizers::Tokenizer;
+use tracing::{debug, error, info, warn};
 
 use crate::transcribe::Transcriber;
 
@@ -15,9 +15,9 @@ const COMPRESSION_RATIO_THRESHOLD: f64 = 2.4;
 const LOGPROB_THRESHOLD: f64 = -1.0;
 
 // Audio chunking constants for long-form transcription
-const CHUNK_LENGTH_SECS: f32 = 30.0;  // Maximum 30 seconds per chunk (Whisper limit)
-const CHUNK_OVERLAP_SECS: f32 = 5.0;   // 5-second overlap between chunks
-const SAMPLE_RATE: usize = 16000;       // Whisper requires 16kHz audio
+const CHUNK_LENGTH_SECS: f32 = 30.0; // Maximum 30 seconds per chunk (Whisper limit)
+const CHUNK_OVERLAP_SECS: f32 = 5.0; // 5-second overlap between chunks
+const SAMPLE_RATE: usize = 16000; // Whisper requires 16kHz audio
 
 /// Model wrapper supporting both normal (safetensors) and quantized (GGUF) models
 enum Model {
@@ -35,7 +35,12 @@ impl Model {
     }
 
     /// Forward pass through decoder
-    fn decoder_forward(&mut self, tokens: &Tensor, audio_features: &Tensor, flush: bool) -> Result<Tensor> {
+    fn decoder_forward(
+        &mut self,
+        tokens: &Tensor,
+        audio_features: &Tensor,
+        flush: bool,
+    ) -> Result<Tensor> {
         match self {
             Self::Normal(m) => Ok(m.decoder.forward(tokens, audio_features, flush)?),
             Self::Quantized(m) => Ok(m.decoder.forward(tokens, audio_features, flush)?),
@@ -83,7 +88,8 @@ impl CandleEngine {
 
         // Check if model_id is a local file path
         let is_local_file = Path::new(model_id).exists();
-        let is_quantized = is_local_file && (model_id.ends_with(".gguf") || model_id.ends_with(".bin"));
+        let is_quantized =
+            is_local_file && (model_id.ends_with(".gguf") || model_id.ends_with(".bin"));
 
         let (config, tokenizer, model) = if is_local_file {
             info!("Loading model from local file: {}", model_id);
@@ -100,13 +106,19 @@ impl CandleEngine {
                 let config_filename = repo.get("config.json")?;
                 let tokenizer_filename = repo.get("tokenizer.json")?;
 
-                let config: Config = serde_json::from_str(&std::fs::read_to_string(config_filename)?)?;
+                let config: Config =
+                    serde_json::from_str(&std::fs::read_to_string(config_filename)?)?;
                 let tokenizer = Tokenizer::from_file(tokenizer_filename)
                     .map_err(|e| anyhow::anyhow!("Failed to load tokenizer: {}", e))?;
 
                 // Load quantized weights
-                let vb = candle_transformers::quantized_var_builder::VarBuilder::from_gguf(model_id, &device)?;
-                let model = Model::Quantized(whisper::quantized_model::Whisper::load(&vb, config.clone())?);
+                let vb = candle_transformers::quantized_var_builder::VarBuilder::from_gguf(
+                    model_id, &device,
+                )?;
+                let model = Model::Quantized(whisper::quantized_model::Whisper::load(
+                    &vb,
+                    config.clone(),
+                )?);
 
                 (config, tokenizer, model)
             } else {
@@ -157,13 +169,23 @@ impl CandleEngine {
             // Try to load quantized model first, fall back to safetensors
             let model = if let Ok(weights_filename) = repo.get("model.gguf") {
                 info!("Found GGUF model, loading quantized variant");
-                let vb = candle_transformers::quantized_var_builder::VarBuilder::from_gguf(&weights_filename, &device)?;
-                Model::Quantized(whisper::quantized_model::Whisper::load(&vb, config.clone())?)
+                let vb = candle_transformers::quantized_var_builder::VarBuilder::from_gguf(
+                    &weights_filename,
+                    &device,
+                )?;
+                Model::Quantized(whisper::quantized_model::Whisper::load(
+                    &vb,
+                    config.clone(),
+                )?)
             } else {
                 info!("Loading safetensors model (normal precision)");
                 let weights_filename = repo.get("model.safetensors")?;
                 let vb = unsafe {
-                    VarBuilder::from_mmaped_safetensors(&[weights_filename], whisper::DTYPE, &device)?
+                    VarBuilder::from_mmaped_safetensors(
+                        &[weights_filename],
+                        whisper::DTYPE,
+                        &device,
+                    )?
                 };
                 Model::Normal(whisper::model::Whisper::load(&vb, config.clone())?)
             };
@@ -194,7 +216,10 @@ impl CandleEngine {
             mask[token as usize] = f32::NEG_INFINITY;
         }
         let suppress_tokens = Tensor::new(&mask[..], &device)?;
-        info!("Suppress mask created: {} tokens suppressed", suppress_list.len());
+        info!(
+            "Suppress mask created: {} tokens suppressed",
+            suppress_list.len()
+        );
 
         info!("CandleEngine initialization complete - ready for transcription");
 
@@ -216,10 +241,10 @@ impl CandleEngine {
             Ok(device) => {
                 info!("CUDA device initialized successfully");
                 return Ok(device);
-            }
+            },
             Err(e) => {
                 warn!("CUDA initialization failed: {}", e);
-            }
+            },
         }
 
         // Try Metal (macOS)
@@ -240,7 +265,10 @@ impl CandleEngine {
         let mel_bytes: &[u8] = match num_mel_bins {
             80 => include_bytes!("../../assets/melfilters80.bytes"),
             128 => include_bytes!("../../assets/melfilters128.bytes"),
-            _ => anyhow::bail!("Unsupported num_mel_bins: {}. Only 80 and 128 are supported.", num_mel_bins),
+            _ => anyhow::bail!(
+                "Unsupported num_mel_bins: {}. Only 80 and 128 are supported.",
+                num_mel_bins
+            ),
         };
 
         let mut mel_filters = vec![0f32; mel_bytes.len() / 4];
@@ -311,8 +339,16 @@ impl CandleEngine {
         }
     }
 
-    fn decode_at_temperature(&mut self, mel: &Tensor, temperature: f64) -> Result<(String, f64, f64)> {
-        debug!("decode_at_temperature() called with mel shape: {:?}, temp: {}", mel.shape(), temperature);
+    fn decode_at_temperature(
+        &mut self,
+        mel: &Tensor,
+        temperature: f64,
+    ) -> Result<(String, f64, f64)> {
+        debug!(
+            "decode_at_temperature() called with mel shape: {:?}, temp: {}",
+            mel.shape(),
+            temperature
+        );
         debug!("Starting decode process with temperature {}", temperature);
 
         debug!("Getting special tokens");
@@ -322,7 +358,10 @@ impl CandleEngine {
         // Validate special tokens are reasonable (Whisper tokenizer uses 51k vocab)
         let validate_token = |name: &str, token: u32| {
             if token > 51865 {
-                warn!("Special token {} = {} seems invalid (> vocab size)", name, token);
+                warn!(
+                    "Special token {} = {} seems invalid (> vocab size)",
+                    name, token
+                );
             }
         };
         validate_token("SOT", special_tokens.sot_token);
@@ -331,23 +370,34 @@ impl CandleEngine {
         validate_token("Transcribe", special_tokens.transcribe_token);
         validate_token("NoTimestamps", special_tokens.no_timestamps_token);
 
-        info!("Special tokens: SOT={}, EOT={}, Lang={}, Transcribe={}, NoTS={}",
-            special_tokens.sot_token, special_tokens.eot_token,
-            special_tokens.language_token, special_tokens.transcribe_token,
-            special_tokens.no_timestamps_token);
+        info!(
+            "Special tokens: SOT={}, EOT={}, Lang={}, Transcribe={}, NoTS={}",
+            special_tokens.sot_token,
+            special_tokens.eot_token,
+            special_tokens.language_token,
+            special_tokens.transcribe_token,
+            special_tokens.no_timestamps_token
+        );
 
         let prompt_tokens = self.encode_initial_prompt()?;
         debug!("Got {} prompt tokens", prompt_tokens.len());
 
         // 1. Run Encoder
-        debug!("Running encoder forward pass on mel shape: {:?}", mel.shape());
+        debug!(
+            "Running encoder forward pass on mel shape: {:?}",
+            mel.shape()
+        );
         info!("MEL SHAPE BEFORE ENCODER: {:?}", mel.shape());
         debug!("Calling encoder.forward()");
         let audio_features = self.model.encoder_forward(mel, true)?;
         debug!("encoder.forward() returned");
         info!("ENCODER OUTPUT SHAPE: {:?}", audio_features.shape());
-        info!("ENCODER OUTPUT DIMS: batch={}, frames={}, d_model={}",
-            audio_features.dim(0)?, audio_features.dim(1)?, audio_features.dim(2)?);
+        info!(
+            "ENCODER OUTPUT DIMS: batch={}, frames={}, d_model={}",
+            audio_features.dim(0)?,
+            audio_features.dim(1)?,
+            audio_features.dim(2)?
+        );
 
         // 2. Build initial token sequence following Whisper spec:
         // <|startoftranscript|><|language|><|transcribe|><|notimestamps|>[optional_prompt_tokens]
@@ -365,8 +415,12 @@ impl CandleEngine {
             current_tokens.extend_from_slice(&prompt_tokens);
         }
 
-        info!("Initial token sequence: {} special tokens + {} prompt tokens = {} total",
-            4, prompt_tokens.len(), current_tokens.len());
+        info!(
+            "Initial token sequence: {} special tokens + {} prompt tokens = {} total",
+            4,
+            prompt_tokens.len(),
+            current_tokens.len()
+        );
 
         // 3. Greedy decoding loop with quality metrics
         let mut result_tokens = Vec::new();
@@ -376,8 +430,10 @@ impl CandleEngine {
         // Decoder has hard limit of 448 total positions
         let max_tokens = 448_usize.saturating_sub(start_result_idx);
 
-        info!("Will start collecting result tokens after index {} (max {} new tokens)",
-            start_result_idx, max_tokens);
+        info!(
+            "Will start collecting result tokens after index {} (max {} new tokens)",
+            start_result_idx, max_tokens
+        );
 
         // Quality metrics tracking
         let mut sum_logprob = 0.0f64;
@@ -388,27 +444,43 @@ impl CandleEngine {
         let mut repeat_count = 0;
         const MAX_REPEATS: usize = 3; // Reduced from 10 - catch loops earlier
 
-        info!("Starting greedy decoding loop (max {} tokens, temp {})", max_tokens, temperature);
+        info!(
+            "Starting greedy decoding loop (max {} tokens, temp {})",
+            max_tokens, temperature
+        );
 
         for iteration in 0..max_tokens {
             // Progress logging every 10 iterations
             if iteration % 10 == 0 {
-                info!("Decode iteration {}/{}, generated {} tokens so far",
-                    iteration, max_tokens, result_tokens.len());
+                info!(
+                    "Decode iteration {}/{}, generated {} tokens so far",
+                    iteration,
+                    max_tokens,
+                    result_tokens.len()
+                );
             }
 
             let input = Tensor::new(current_tokens.as_slice(), &self.device)?.unsqueeze(0)?;
 
             if iteration == 0 {
                 debug!("First decoder input shape: {:?}", input.shape());
-                info!("DECODER INPUT SHAPE (iter 0): {:?} (batch={}, seq_len={})",
-                    input.shape(), input.dim(0)?, input.dim(1)?);
-                info!("AUDIO FEATURES SHAPE PASSED TO DECODER: {:?}", audio_features.shape());
+                info!(
+                    "DECODER INPUT SHAPE (iter 0): {:?} (batch={}, seq_len={})",
+                    input.shape(),
+                    input.dim(0)?,
+                    input.dim(1)?
+                );
+                info!(
+                    "AUDIO FEATURES SHAPE PASSED TO DECODER: {:?}",
+                    audio_features.shape()
+                );
             }
 
             // Decoder forward pass produces hidden states [batch, seq_len, d_model=1280]
             // CRITICAL: Only flush KV cache on first iteration to maintain context
-            let decoder_output = self.model.decoder_forward(&input, &audio_features, iteration == 0)?;
+            let decoder_output =
+                self.model
+                    .decoder_forward(&input, &audio_features, iteration == 0)?;
 
             // Project hidden states to vocabulary logits [batch, seq_len, vocab_size=51866]
             let logits = self.model.decoder_final_linear(&decoder_output)?;
@@ -423,7 +495,7 @@ impl CandleEngine {
             }
 
             let seq_len = logits.dim(0)?;
-            let mut last_logit = logits.i((seq_len - 1, ..))?;  // Shape: [vocab_size]
+            let mut last_logit = logits.i((seq_len - 1, ..))?; // Shape: [vocab_size]
 
             if iteration == 0 {
                 debug!("last_logit shape: {:?}", last_logit.shape());
@@ -466,10 +538,15 @@ impl CandleEngine {
                 if last == next_token {
                     repeat_count += 1;
                     if repeat_count >= MAX_REPEATS {
-                        warn!("Token {} repeated {} times consecutively, likely infinite loop - breaking early",
-                            next_token, repeat_count);
-                        warn!("Generated {} tokens before loop: {:?}",
-                            result_tokens.len(), &result_tokens[..result_tokens.len().min(20)]);
+                        warn!(
+                            "Token {} repeated {} times consecutively, likely infinite loop - breaking early",
+                            next_token, repeat_count
+                        );
+                        warn!(
+                            "Generated {} tokens before loop: {:?}",
+                            result_tokens.len(),
+                            &result_tokens[..result_tokens.len().min(20)]
+                        );
                         break;
                     }
                 } else {
@@ -505,7 +582,11 @@ impl CandleEngine {
             .map_err(|e| anyhow::anyhow!("Decoding error: {}", e))?;
 
         let text = decoded.trim().to_string();
-        info!("Decoded {} tokens to text: \"{}\"", result_tokens.len(), text);
+        info!(
+            "Decoded {} tokens to text: \"{}\"",
+            result_tokens.len(),
+            text
+        );
 
         // 5. Calculate quality metrics
         let avg_logprob = if logprob_count > 0 {
@@ -520,7 +601,10 @@ impl CandleEngine {
             0.0
         };
 
-        info!("Quality metrics: avg_logprob={:.3}, compression_ratio={:.3}", avg_logprob, compression_ratio);
+        info!(
+            "Quality metrics: avg_logprob={:.3}, compression_ratio={:.3}",
+            avg_logprob, compression_ratio
+        );
 
         Ok((text, avg_logprob, compression_ratio))
     }
@@ -543,18 +627,22 @@ impl CandleEngine {
                         || avg_logprob < LOGPROB_THRESHOLD;
 
                     if !needs_fallback {
-                        info!("Decoding succeeded at temperature {} (logprob={:.3}, compression={:.3})",
-                            temp, avg_logprob, compression_ratio);
+                        info!(
+                            "Decoding succeeded at temperature {} (logprob={:.3}, compression={:.3})",
+                            temp, avg_logprob, compression_ratio
+                        );
                         return Ok(text);
                     }
 
-                    warn!("Quality check failed at temp {} (logprob={:.3}, compression={:.3}), trying next temperature",
-                        temp, avg_logprob, compression_ratio);
-                }
+                    warn!(
+                        "Quality check failed at temp {} (logprob={:.3}, compression={:.3}), trying next temperature",
+                        temp, avg_logprob, compression_ratio
+                    );
+                },
                 Err(e) => {
                     warn!("Decoding failed at temperature {}: {}", temp, e);
                     continue;
-                }
+                },
             }
         }
 
@@ -570,14 +658,22 @@ impl CandleEngine {
         }
 
         // Pad audio to exactly 30 seconds (480000 samples at 16kHz) as Whisper expects
-        const N_SAMPLES: usize = 480000;  // 30 seconds * 16000 Hz
+        const N_SAMPLES: usize = 480000; // 30 seconds * 16000 Hz
         let mut padded_audio = audio.to_vec();
         if padded_audio.len() < N_SAMPLES {
-            info!("Padding audio from {} to {} samples", audio.len(), N_SAMPLES);
-            padded_audio.resize(N_SAMPLES, 0.0);  // Pad with silence
+            info!(
+                "Padding audio from {} to {} samples",
+                audio.len(),
+                N_SAMPLES
+            );
+            padded_audio.resize(N_SAMPLES, 0.0); // Pad with silence
         } else if padded_audio.len() > N_SAMPLES {
-            info!("Truncating audio from {} to {} samples", audio.len(), N_SAMPLES);
-            padded_audio.truncate(N_SAMPLES);  // Truncate if too long
+            info!(
+                "Truncating audio from {} to {} samples",
+                audio.len(),
+                N_SAMPLES
+            );
+            padded_audio.truncate(N_SAMPLES); // Truncate if too long
         }
         info!("PADDED AUDIO LENGTH: {} samples", padded_audio.len());
 
@@ -591,7 +687,10 @@ impl CandleEngine {
         let n_mels = self.config.num_mel_bins;
         let frames = mel_len / n_mels;
 
-        info!("MEL SPECTROGRAM: mel_len={}, n_mels={}, frames={}", mel_len, n_mels, frames);
+        info!(
+            "MEL SPECTROGRAM: mel_len={}, n_mels={}, frames={}",
+            mel_len, n_mels, frames
+        );
 
         if mel_len == 0 || frames == 0 || mel_len % n_mels != 0 {
             anyhow::bail!("Invalid mel spectrogram");
@@ -606,8 +705,10 @@ impl CandleEngine {
         // Truncate to exactly 3000 frames to match model's max_source_positions
         const MAX_MEL_FRAMES: usize = 3000;
         let mel = if frames > MAX_MEL_FRAMES {
-            warn!("Mel has {} frames, truncating to {} to match model's max_source_positions",
-                frames, MAX_MEL_FRAMES);
+            warn!(
+                "Mel has {} frames, truncating to {} to match model's max_source_positions",
+                frames, MAX_MEL_FRAMES
+            );
             mel.narrow(1, 0, MAX_MEL_FRAMES)?
         } else {
             mel
@@ -629,9 +730,17 @@ impl Transcriber for CandleEngine {
         }
 
         let duration_secs = audio.len() as f32 / SAMPLE_RATE as f32;
-        info!("Transcribing {} samples ({:.2}s) [Language: {}, Prompt: {}]",
-            audio.len(), duration_secs, self.language,
-            if self.initial_prompt.is_some() { "true" } else { "false" });
+        info!(
+            "Transcribing {} samples ({:.2}s) [Language: {}, Prompt: {}]",
+            audio.len(),
+            duration_secs,
+            self.language,
+            if self.initial_prompt.is_some() {
+                "true"
+            } else {
+                "false"
+            }
+        );
 
         // Check if we need chunking (audio > 30 seconds)
         if duration_secs <= CHUNK_LENGTH_SECS {
@@ -641,8 +750,10 @@ impl Transcriber for CandleEngine {
         }
 
         // Long audio - split into overlapping chunks
-        info!("Audio is {:.1}s, splitting into {:.0}s chunks with {:.0}s overlap",
-            duration_secs, CHUNK_LENGTH_SECS, CHUNK_OVERLAP_SECS);
+        info!(
+            "Audio is {:.1}s, splitting into {:.0}s chunks with {:.0}s overlap",
+            duration_secs, CHUNK_LENGTH_SECS, CHUNK_OVERLAP_SECS
+        );
 
         let chunk_samples = (CHUNK_LENGTH_SECS * SAMPLE_RATE as f32) as usize;
         let overlap_samples = (CHUNK_OVERLAP_SECS * SAMPLE_RATE as f32) as usize;
@@ -656,22 +767,28 @@ impl Transcriber for CandleEngine {
             let chunk = &audio[offset..end];
             let chunk_duration = chunk.len() as f32 / SAMPLE_RATE as f32;
 
-            info!("Processing chunk {}: {:.1}s-{:.1}s ({:.1}s duration, {} samples)",
+            info!(
+                "Processing chunk {}: {:.1}s-{:.1}s ({:.1}s duration, {} samples)",
                 results.len() + 1,
                 offset as f32 / SAMPLE_RATE as f32,
                 end as f32 / SAMPLE_RATE as f32,
                 chunk_duration,
-                chunk.len());
+                chunk.len()
+            );
 
             match self.transcribe_chunk(chunk) {
                 Ok(text) => {
                     if !text.is_empty() {
                         results.push(text);
                     }
-                }
+                },
                 Err(e) => {
-                    warn!("Chunk {} failed: {}, continuing with next chunk", results.len() + 1, e);
-                }
+                    warn!(
+                        "Chunk {} failed: {}, continuing with next chunk",
+                        results.len() + 1,
+                        e
+                    );
+                },
             }
 
             // Move to next chunk (with overlap)
@@ -694,7 +811,11 @@ impl Transcriber for CandleEngine {
 
         // Concatenate all chunks with space separator
         let final_text = results.join(" ");
-        info!("Long-form transcription complete: {} chunks, {} characters", results.len(), final_text.len());
+        info!(
+            "Long-form transcription complete: {} chunks, {} characters",
+            results.len(),
+            final_text.len()
+        );
 
         Ok(final_text)
     }
