@@ -193,6 +193,8 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-feat-cuda-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build with CUDA
+        env:
+          CUDA_COMPUTE_CAP: "75" # Target RTX 20xx/30xx/40xx (sm_75 is compatible)
         run: cargo build --release --features cuda
 
       - name: List release outputs
