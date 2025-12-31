@@ -300,3 +300,59 @@ pub async fn restart_daemon() -> Result<(), String> {
 
     Err("Daemon failed to start within 5 seconds".to_string())
 }
+
+/// Validate if a path exists and return its type
+#[tauri::command]
+pub async fn validate_path(path: String) -> Result<PathValidation, String> {
+    // Expand ~ to home directory
+    let expanded_path = if path.starts_with('~') {
+        if let Ok(home) = std::env::var("HOME") {
+            path.replacen('~', &home, 1)
+        } else {
+            path.clone()
+        }
+    } else {
+        path.clone()
+    };
+
+    let path_obj = std::path::Path::new(&expanded_path);
+
+    if !path_obj.exists() {
+        return Ok(PathValidation {
+            valid: false,
+            exists: false,
+            is_file: false,
+            is_directory: false,
+            expanded_path: expanded_path.clone(),
+            message: "Path does not exist".to_string(),
+        });
+    }
+
+    let is_file = path_obj.is_file();
+    let is_directory = path_obj.is_dir();
+
+    Ok(PathValidation {
+        valid: true,
+        exists: true,
+        is_file,
+        is_directory,
+        expanded_path: expanded_path.clone(),
+        message: if is_file {
+            "Valid file path".to_string()
+        } else if is_directory {
+            "Valid directory path".to_string()
+        } else {
+            "Path exists".to_string()
+        },
+    })
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PathValidation {
+    pub valid: bool,
+    pub exists: bool,
+    pub is_file: bool,
+    pub is_directory: bool,
+    pub expanded_path: String,
+    pub message: String,
+}

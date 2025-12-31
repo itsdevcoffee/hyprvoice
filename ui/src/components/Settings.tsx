@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, RotateCcw, Check, FolderOpen } from 'lucide-react';
-import { open } from '@tauri-apps/plugin-dialog';
+import { Save, RotateCcw, Check } from 'lucide-react';
 import { invoke } from '../lib/ipc';
 import { cn } from '../lib/utils';
 import { useAppStore } from '../stores/appStore';
 import RestartBanner from './RestartBanner';
+import PathInput from './PathInput';
 
 interface Config {
   model: {
@@ -217,33 +217,13 @@ export default function Settings() {
           </SettingRow>
 
           <SettingRow label="Model Path" description="Local path to model files">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={config.model.path}
-                onChange={(e) => setConfig({ ...config, model: { ...config.model, path: e.target.value }})}
-                className="glass-input font-mono text-xs flex-1"
-                placeholder="~/.local/share/hyprvoice/models/..."
-              />
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={async () => {
-                  const selected = await open({
-                    directory: false,
-                    multiple: false,
-                    defaultPath: config.model.path,
-                  });
-                  if (selected) {
-                    setConfig({ ...config, model: { ...config.model, path: selected as string }});
-                  }
-                }}
-                className="glass-button px-3 py-2 text-cyan-400"
-                title="Browse for model file"
-              >
-                <FolderOpen className="w-4 h-4" />
-              </motion.button>
-            </div>
+            <PathInput
+              value={config.model.path}
+              onChange={(newPath) => setConfig({ ...config, model: { ...config.model, path: newPath }})}
+              type="file"
+              placeholder="~/.local/share/hyprvoice/models/..."
+              label="Browse for model file"
+            />
           </SettingRow>
 
           <SettingRow label="Technical Vocabulary" description="Custom prompts to bias transcription (optional)">
@@ -281,40 +261,13 @@ export default function Settings() {
 
           {config.audio.save_audio_clips && (
             <SettingRow label="Audio Clips Path" description="Directory to save WAV files">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={config.audio.audio_clips_path}
-                  onChange={(e) => setConfig({ ...config, audio: { ...config.audio, audio_clips_path: e.target.value }})}
-                  className="glass-input font-mono text-xs flex-1"
-                  placeholder="~/.local/share/hyprvoice/recordings"
-                />
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={async () => {
-                    try {
-                      console.log('Opening folder picker...');
-                      const selected = await open({
-                        directory: true,
-                        multiple: false,
-                        defaultPath: config.audio.audio_clips_path,
-                      });
-                      console.log('Selected:', selected);
-                      if (selected) {
-                        setConfig({ ...config, audio: { ...config.audio, audio_clips_path: selected as string }});
-                      }
-                    } catch (error) {
-                      console.error('Failed to open folder picker:', error);
-                      alert(`Failed to open folder picker: ${error}`);
-                    }
-                  }}
-                  className="glass-button px-3 py-2 text-cyan-400"
-                  title="Browse for folder"
-                >
-                  <FolderOpen className="w-4 h-4" />
-                </motion.button>
-              </div>
+              <PathInput
+                value={config.audio.audio_clips_path}
+                onChange={(newPath) => setConfig({ ...config, audio: { ...config.audio, audio_clips_path: newPath }})}
+                type="directory"
+                placeholder="~/.local/share/hyprvoice/recordings"
+                label="Browse for folder"
+              />
             </SettingRow>
           )}
         </SettingsSection>
