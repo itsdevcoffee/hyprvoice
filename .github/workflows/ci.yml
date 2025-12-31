@@ -169,7 +169,7 @@ jobs:
       - name: Install build essentials
         run: |
           apt-get update
-          apt-get install -y curl build-essential cmake libclang-dev libasound2-dev pkg-config libxkbcommon-dev file
+          apt-get install -y curl build-essential cmake libclang-dev libasound2-dev pkg-config libxkbcommon-dev file libssl-dev
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
