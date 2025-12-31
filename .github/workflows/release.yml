@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+  build-linux-cpu:
+    name: Build Linux (CPU)
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev libasound2-dev pkg-config libxkbcommon-dev
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Package binary
+        run: |
+          mkdir -p hyprvoice-linux-x64
+          cp target/release/hyprvoice hyprvoice-linux-x64/
+          cp README.md hyprvoice-linux-x64/
+          cp LICENSE hyprvoice-linux-x64/ || echo "No LICENSE file"
+          tar -czf hyprvoice-linux-x64.tar.gz hyprvoice-linux-x64/
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./hyprvoice-linux-x64.tar.gz
+          asset_name: hyprvoice-linux-x64.tar.gz
+          asset_content_type: application/gzip
+
+  build-macos-arm:
+    name: Build macOS (Apple Silicon)
+    needs: create-release
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Package binary
+        run: |
+          mkdir -p hyprvoice-macos-arm64
+          cp target/release/hyprvoice hyprvoice-macos-arm64/
+          cp README.md hyprvoice-macos-arm64/
+          cp LICENSE hyprvoice-macos-arm64/ || echo "No LICENSE file"
+          tar -czf hyprvoice-macos-arm64.tar.gz hyprvoice-macos-arm64/
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./hyprvoice-macos-arm64.tar.gz
+          asset_name: hyprvoice-macos-arm64.tar.gz
+          asset_content_type: application/gzip
+
+  build-macos-intel:
+    name: Build macOS (Intel)
+    needs: create-release
+    runs-on: macos-15-large
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Package binary
+        run: |
+          mkdir -p hyprvoice-macos-intel
+          cp target/release/hyprvoice hyprvoice-macos-intel/
+          cp README.md hyprvoice-macos-intel/
+          cp LICENSE hyprvoice-macos-intel/ || echo "No LICENSE file"
+          tar -czf hyprvoice-macos-intel.tar.gz hyprvoice-macos-intel/
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./hyprvoice-macos-intel.tar.gz
+          asset_name: hyprvoice-macos-intel.tar.gz
+          asset_content_type: application/gzip
