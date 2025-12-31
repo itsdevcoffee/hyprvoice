@@ -82,8 +82,8 @@ pub async fn stop_recording() -> Result<String, String> {
             daemon_client::DaemonResponse::Success { text } => {
                 println!("Transcription: {}", text);
 
-                // Trigger Waybar refresh (same as CLI does)
-                refresh_waybar();
+                // Trigger status bar refresh (reads user's config)
+                refresh_statusbar();
 
                 Ok(text)
             }
@@ -96,18 +96,51 @@ pub async fn stop_recording() -> Result<String, String> {
     }
 }
 
-/// Refresh Waybar status (trigger signal)
-fn refresh_waybar() {
-    // Run: pkill -RTMIN+8 waybar
-    let _ = std::process::Command::new("pkill")
-        .args(["-RTMIN+8", "waybar"])
-        .spawn()
-        .map(|mut child| {
-            // Detach immediately
-            let _ = child.stdin.take();
-            let _ = child.stdout.take();
-            let _ = child.stderr.take();
-        });
+/// Refresh status bar (execute user-configured refresh_command)
+fn refresh_statusbar() {
+    // Read config to get refresh_command
+    let config_path = dirs::config_dir()
+        .map(|dir| dir.join("hyprvoice").join("config.toml"));
+
+    let Some(config_path) = config_path else {
+        eprintln!("Could not determine config path");
+        return;
+    };
+
+    // Read and parse config
+    let Ok(config_str) = std::fs::read_to_string(&config_path) else {
+        eprintln!("Could not read config file");
+        return;
+    };
+
+    let Ok(config) = toml::from_str::<toml::Value>(&config_str) else {
+        eprintln!("Could not parse config");
+        return;
+    };
+
+    // Get refresh_command from config.output.refresh_command
+    let Some(refresh_cmd) = config
+        .get("output")
+        .and_then(|o| o.get("refresh_command"))
+        .and_then(|c| c.as_str())
+    else {
+        // No refresh command configured, skip silently
+        return;
+    };
+
+    // Parse command string into program + args (e.g., "pkill -RTMIN+8 waybar")
+    let parts: Vec<&str> = refresh_cmd.split_whitespace().collect();
+    if let Some((program, args)) = parts.split_first() {
+        let _ = std::process::Command::new(program)
+            .args(args)
+            .spawn()
+            .map(|mut child| {
+                // Detach immediately (non-blocking)
+                let _ = child.stdin.take();
+                let _ = child.stdout.take();
+                let _ = child.stderr.take();
+            });
+    }
 }
 
 /// Get transcription history
