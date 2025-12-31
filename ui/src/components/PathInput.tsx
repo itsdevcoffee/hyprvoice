@@ -8,7 +8,7 @@ import { cn } from '../lib/utils';
 interface PathInputProps {
   value: string;
   onChange: (value: string) => void;
-  type: 'file' | 'directory';
+  type: 'file' | 'directory' | 'any';
   placeholder?: string;
   label?: string;
 }
@@ -80,7 +80,9 @@ export default function PathInput({ value, onChange, type, placeholder, label }:
 
     // Check type match
     const typeMatches =
-      (type === 'file' && is_file) || (type === 'directory' && is_directory);
+      type === 'any' ||
+      (type === 'file' && is_file) ||
+      (type === 'directory' && is_directory);
 
     if (exists && typeMatches) {
       return <Check className="w-4 h-4 text-green-400" />;
@@ -106,7 +108,13 @@ export default function PathInput({ value, onChange, type, placeholder, label }:
     if (exists && typeMatches) {
       return (
         <span className="text-green-400 text-xs">
-          ✓ {type === 'file' ? 'File exists' : 'Directory exists'}
+          ✓ {type === 'any'
+            ? is_file
+              ? 'File exists'
+              : 'Directory exists'
+            : type === 'file'
+            ? 'File exists'
+            : 'Directory exists'}
         </span>
       );
     } else if (exists && !typeMatches) {

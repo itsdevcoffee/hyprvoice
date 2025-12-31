@@ -216,13 +216,13 @@ export default function Settings() {
             />
           </SettingRow>
 
-          <SettingRow label="Model Path" description="Local path to model files">
+          <SettingRow label="Model Path" description="Path to model file or directory (safetensors or GGUF)">
             <PathInput
               value={config.model.path}
               onChange={(newPath) => setConfig({ ...config, model: { ...config.model, path: newPath }})}
-              type="file"
+              type="any"
               placeholder="~/.local/share/hyprvoice/models/..."
-              label="Browse for model file"
+              label="Browse for model"
             />
           </SettingRow>
 
